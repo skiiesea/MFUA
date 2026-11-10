@@ -32,6 +32,10 @@ export function RegisterPage() {
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sent, setSent] = useState(false);
+  const [verificationMode, setVerificationMode] = useState<'code' | 'link'>('link');
+  const [code, setCode] = useState('');
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [resendBusy, setResendBusy] = useState(false);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setF({ ...f, [k]: k === 'username' ? e.target.value.toLowerCase().replace(/\s/g, '') : e.target.value });
     setErrors((x) => ({ ...x, [k]: '' }));
@@ -55,8 +59,11 @@ export function RegisterPage() {
     if (Object.keys(local).length) return;
     setBusy(true);
     try {
-      const r = await api.post<{ needsVerification: boolean }>('/auth/register', f);
-      if (r.needsVerification) setSent(true);
+      const r = await api.post<{ needsVerification: boolean; verificationMethod?: 'code' | 'link' }>('/auth/register', f);
+      if (r.needsVerification) {
+        setVerificationMode(r.verificationMethod ?? 'link');
+        setSent(true);
+      }
       else {
         toast.success('Аккаунт создан. Теперь войдите.');
         navigate('/login');
@@ -68,13 +75,68 @@ export function RegisterPage() {
     }
   };
 
+  const verifyCode = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(code)) {
+      setErrors({ _: 'Введите шестизначный код из консоли сервера.' });
+      return;
+    }
+    setCodeBusy(true);
+    try {
+      await api.post('/auth/verify-email-code', { email: f.email, code });
+      toast.success('Email подтверждён. Теперь войдите.');
+      navigate('/login');
+    } catch (err) {
+      if (err instanceof ApiError) setErrors({ _: err.message });
+    } finally {
+      setCodeBusy(false);
+    }
+  };
+
+  const resendVerification = async () => {
+    setResendBusy(true);
+    try {
+      await api.post('/auth/resend-verification', { identifier: f.email });
+      toast.success(verificationMode === 'code' ? 'Новый код выведен в консоль сервера.' : 'Письмо отправлено повторно.');
+      setCode('');
+      setErrors({});
+    } catch (err) {
+      if (err instanceof ApiError) setErrors({ _: err.message });
+      else toast.error('Не удалось отправить подтверждение. Попробуйте позже.');
+    } finally {
+      setResendBusy(false);
+    }
+  };
+
   if (sent) {
     return (
-      <AuthLayout title="Проверьте почту" subtitle={`Мы отправили ссылку для подтверждения на ${f.email}. Она действует 24 часа.`}>
+      <AuthLayout
+        title={verificationMode === 'code' ? 'Введите код подтверждения' : 'Проверьте почту'}
+        subtitle={verificationMode === 'code'
+          ? `Шестизначный код для ${f.email} выведен в консоль сервера. Код действует 5 минут.`
+          : `Мы отправили ссылку для подтверждения на ${f.email}. Она действует 24 часа.`}
+      >
         <div className="flex flex-col items-center rounded-3xl border border-line/10 bg-surface/60 p-8 text-center">
           <div className="grad mb-5 flex h-16 w-16 items-center justify-center rounded-2xl text-white shadow-glow"><MailCheck className="h-8 w-8" /></div>
-          <p className="text-sm leading-relaxed text-muted">Не пришло письмо? Загляните в «Спам» или запросите новое.</p>
-          <Button variant="soft" className="mt-5" onClick={async () => { await api.post('/auth/resend-verification', { identifier: f.email }).catch(() => {}); toast.success('Письмо отправлено повторно'); }}>Отправить ещё раз</Button>
+          {verificationMode === 'code' ? (
+            <form onSubmit={verifyCode} className="w-full space-y-4 text-left">
+              <Input
+                label="Шестизначный код"
+                value={code}
+                onChange={(e) => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setErrors({}); }}
+                placeholder="000000"
+                maxLength={6}
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                error={errors._}
+              />
+              <Button type="submit" size="lg" className="w-full" loading={codeBusy} disabled={code.length !== 6}>Подтвердить email</Button>
+            </form>
+          ) : (
+            <p className="text-sm leading-relaxed text-muted">Не пришло письмо? Загляните в «Спам» или запросите новое.</p>
+          )}
+          {errors._ && verificationMode === 'link' && <p className="mt-3 text-sm text-danger" role="alert">{errors._}</p>}
+          <Button variant="soft" className="mt-5" onClick={resendVerification} loading={resendBusy}>Отправить ещё раз</Button>
         </div>
         <p className="mt-8 text-center text-sm text-muted"><Link to="/login" className="font-semibold text-accent hover:underline">Перейти ко входу</Link></p>
       </AuthLayout>
