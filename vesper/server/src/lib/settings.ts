@@ -20,7 +20,7 @@ export const notifSettingsSchema = z.object({
       mention: z.boolean().default(true),
       security: z.boolean().default(true),
     })
-    .default({}),
+    .default({ message: true, friendRequest: true, friendAccepted: true, mention: true, security: true }),
 });
 export type NotifSettings = z.infer<typeof notifSettingsSchema>;
 
