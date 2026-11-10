@@ -13,7 +13,7 @@ import { displayNameSchema, emailSchema, usernameSchema } from '../../lib/valida
 import { requireAuth } from '../../middleware/auth';
 import { availabilityLimiter, emailLimiter, loginLimiter, registerLimiter, twoFaLimiter } from '../../middleware/rateLimit';
 import { notify } from '../notifications/notifications.service';
-import { issueEmailToken } from './emailTokens';
+import { issueEmailToken, issueEmailVerificationCode } from './emailTokens';
 import { dummyVerify, hashPassword, needsRehash, passwordProblems, verifyPassword } from './password';
 import { clearSessionCookie, createSession, deviceLabel, revokeSession, setSessionCookie } from './session.service';
 import { verifySecondFactor } from './totp.service';
@@ -100,9 +100,12 @@ authRouter.post('/register', registerLimiter, ah(async (req, res) => {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') throw conflict('Логин или email уже заняты');
     throw err;
   }
-  if (env.REQUIRE_EMAIL_VERIFICATION) await issueEmailToken(user, 'VERIFY', user.email);
+  if (env.REQUIRE_EMAIL_VERIFICATION) {
+    if (env.NODE_ENV === 'development') await issueEmailVerificationCode(user, user.email);
+    else await issueEmailToken(user, 'VERIFY', user.email);
+  }
   logs.auth.info({ event: 'register', userId: user.id, username: user.username, ip: ipOf(req) }, 'New account registered');
-  res.status(201).json({ needsVerification: env.REQUIRE_EMAIL_VERIFICATION });
+  res.status(201).json({ needsVerification: env.REQUIRE_EMAIL_VERIFICATION, verificationMethod: env.NODE_ENV === 'development' ? 'code' : 'link' });
 }));
 
 authRouter.get('/availability', availabilityLimiter, ah(async (req, res) => {
@@ -133,13 +136,43 @@ authRouter.post('/verify-email', emailLimiter, ah(async (req, res) => {
   res.json({ ok: true, type: t.type });
 }));
 
+authRouter.post('/verify-email-code', emailLimiter, ah(async (req, res) => {
+  const { email, code } = parse(
+    z.object({
+      email: emailSchema,
+      code: z.string().regex(/^\d{6}$/, 'Введите шестизначный код'),
+    }),
+    req.body,
+  );
+  const token = await prisma.emailToken.findUnique({ where: { tokenHash: sha256(code) } });
+  const now = new Date();
+  if (!token || token.type !== 'VERIFY' || token.email.toLowerCase() !== email.toLowerCase() || token.usedAt || token.expiresAt <= now) {
+    throw badRequest('Код недействителен или истёк. Запросите новый код.', 'INVALID_CODE');
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const consumed = await tx.emailToken.updateMany({
+      where: { id: token.id, type: 'VERIFY', usedAt: null, expiresAt: { gt: now } },
+      data: { usedAt: now },
+    });
+    if (consumed.count !== 1) throw badRequest('Код недействителен или уже использован. Запросите новый код.', 'INVALID_CODE');
+    await tx.user.update({ where: { id: token.userId }, data: { emailVerifiedAt: now } });
+  });
+
+  logs.auth.info({ event: 'email_verified', userId: token.userId, ip: ipOf(req) }, 'Email confirmed with verification code');
+  res.json({ ok: true, type: 'VERIFY' });
+}));
+
 authRouter.post('/resend-verification', emailLimiter, ah(async (req, res) => {
   const { identifier } = parse(z.object({ identifier: z.string().trim().min(1).max(254) }), req.body);
   const idf = identifier.toLowerCase();
   const user = await prisma.user.findFirst({ where: idf.includes('@') ? { email: idf } : { username: idf } });
   if (user && !user.emailVerifiedAt) {
     const last = await prisma.emailToken.findFirst({ where: { userId: user.id, type: 'VERIFY' }, orderBy: { createdAt: 'desc' } });
-    if (!last || Date.now() - last.createdAt.getTime() > 60_000) await issueEmailToken(user, 'VERIFY', user.email);
+    if (!last || Date.now() - last.createdAt.getTime() > 60_000) {
+      if (env.NODE_ENV === 'development') await issueEmailVerificationCode(user, user.email);
+      else await issueEmailToken(user, 'VERIFY', user.email);
+    }
   }
   res.json({ ok: true }); // одинаковый ответ — не раскрываем, существует ли аккаунт
 }));
@@ -176,7 +209,7 @@ authRouter.post('/login', loginLimiter, ah(async (req, res) => {
   }
   if (env.REQUIRE_EMAIL_VERIFICATION && !user.emailVerifiedAt) {
     await recordLogin(user.id, false, 'email_not_verified', req);
-    throw new AppError(403, 'EMAIL_NOT_VERIFIED', 'Подтвердите email: мы отправили письмо со ссылкой при регистрации.');
+    throw new AppError(403, 'EMAIL_NOT_VERIFIED', 'Подтвердите email с помощью кода, отправленного при регистрации.');
   }
   if (user.totpEnabledAt) {
     res.json({ twoFactorRequired: true, ticket: signTicket({ uid: user.id, rem: !!remember, p: '2fa' }, 300) });
