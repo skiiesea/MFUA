@@ -67,7 +67,7 @@ authRouter.post('/register', registerLimiter, ah(async (req, res) => {
       username: usernameSchema,
       displayName: displayNameSchema,
       email: emailSchema,
-      password: z.string({ required_error: 'Введите пароль' }).max(128),
+      password: z.string({ error: 'Введите пароль' }).max(128),
       passwordConfirm: z.string(),
     }),
     req.body,
