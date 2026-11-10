@@ -33,7 +33,14 @@ export async function issueEmailVerificationCode(user: { id: string; displayName
     throw new Error('Email verification codes are available only in development');
   }
 
-  const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
+  let code = '';
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    code = randomInt(0, 1_000_000).toString().padStart(6, '0');
+    const existing = await prisma.emailToken.findUnique({ where: { tokenHash: sha256(code) }, select: { id: true } });
+    if (!existing) break;
+    code = '';
+  }
+  if (!code) throw new Error('Could not generate a unique email verification code');
   const now = new Date();
 
   await prisma.emailToken.updateMany({
