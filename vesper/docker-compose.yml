@@ -1,0 +1,15 @@
+# Только PostgreSQL для разработки. Redis не нужен: приложение работает в одном процессе.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vesper
+      POSTGRES_PASSWORD: vesper_dev_password
+      POSTGRES_DB: vesper
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - vesper_pg:/var/lib/postgresql/data
+volumes:
+  vesper_pg:

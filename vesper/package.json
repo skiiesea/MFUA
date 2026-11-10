@@ -1,0 +1,30 @@
+{
+  "name": "vesper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vesper — персональный мессенджер",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "dev": "concurrently -n server,web -c magenta,cyan \"npm run dev -w server\" \"npm run dev -w web\"",
+    "build": "npm run build -w web && npm run build -w server",
+    "start": "npm run start -w server",
+    "db:init": "npm run db:init -w server",
+    "db:migrate": "npm run db:migrate -w server",
+    "db:deploy": "npm run db:deploy -w server",
+    "db:generate": "npm run db:generate -w server",
+    "db:validate": "npm run db:validate -w server",
+    "create-admin": "npm run create-admin -w server",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
