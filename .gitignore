@@ -1,0 +1,42 @@
+
+# IDE & Configuration Files
+
+# Visual Studio
+*.sln
+*.vcxproj*
+*.pdb
+*.resx
+*.resources
+*.aps
+*.rc
+*.tlog
+*.metagen
+*.recipe
+*.log
+.vs/
+**/.vs/
+
+# VS Code
+.vscode/
+**/.vscode/
+
+
+# Build & Compilation Artifacts
+*.o
+*.obj
+*.exe
+**/[Dd]ebug/
+**/[Dd]ebugPublic/
+**/[Rr]elease/
+**/[Rr]eleases/
+**/x64/
+**/x86/
+
+
+# Generated Files (Flex / Bison / Yacc)
+*.tab.cc
+*.tab.hh
+stack.hh
+*.yy.cc
+*.output
+
