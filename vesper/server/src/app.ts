@@ -47,13 +47,16 @@ export function createApp() {
   app.use(express.json({ limit: '100kb' }));
 
   // Публичные медиа (аватары, обложки): имена файлов — случайные токены
-  app.use('/media', express.static(publicDir, {
+  const publicMedia = express.static(publicDir, {
     index: false,
     dotfiles: 'deny',
     maxAge: '30d',
     immutable: true,
     setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
-  }));
+  });
+  app.use('/media', publicMedia);
+  // Keep public profile images behind the same /api proxy as the frontend API.
+  app.use('/api/media', publicMedia);
 
   app.get('/api/health', (_req, res) => void res.json({ ok: true }));
   app.use('/api', csrfGuard, globalLimiter);
