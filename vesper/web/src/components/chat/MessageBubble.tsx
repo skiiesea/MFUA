@@ -80,7 +80,7 @@ function BubbleImpl({ m, chat, mine, meId, first, last, status, highlight, onMen
               <button onClick={() => onJump(m.replyTo!.id)} className={clsx('mb-1.5 block w-full rounded-lg border-l-[3px] py-1 pl-2.5 pr-2 text-left text-[13px] transition hover:opacity-80', mine ? 'border-white/70 bg-black/15' : 'border-accent bg-accent/10')}>
                 <span className={clsx('block font-bold', mine ? 'text-white' : 'text-accent')}>{m.replyTo.senderName}</span>
                 <span className={clsx('line-clamp-2 break-words', mine ? 'text-white/85' : 'text-muted')}>
-                  {m.replyTo.deleted ? 'Сообщение удалено' : m.replyTo.text || (m.replyTo.hasAttachment ? 'Вложение' : '')}
+                  {m.replyTo.deleted ? 'Сообщение удалено' : <AppleEmojiText text={m.replyTo.text || (m.replyTo.hasAttachment ? 'Вложение' : '')} />}
                 </span>
               </button>
             )}
