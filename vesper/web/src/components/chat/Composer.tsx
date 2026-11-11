@@ -167,7 +167,7 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
                 void upload(imgs.map((f, i) => (f.name === 'image.png' ? new File([f], `screenshot-${Date.now()}-${i}.png`, { type: f.type }) : f)));
               }
             }}
-            className="block max-h-[150px] w-full resize-none rounded-2xl border border-line/10 bg-raised py-3 pl-4 pr-11 text-[15px] leading-snug placeholder:text-muted/70 focus:border-accent/60 focus:outline-none focus:ring-4 focus:ring-accent/15"
+            className="no-scrollbar block max-h-[150px] w-full resize-none rounded-2xl border border-line/10 bg-raised py-3 pl-4 pr-11 text-[15px] leading-snug placeholder:text-muted/70 focus:border-accent/60 focus:outline-none focus:ring-4 focus:ring-accent/15"
           />
           <button type="button" onClick={() => setEmoji((v) => !v)} aria-label="Эмодзи" className={clsx('absolute bottom-1.5 right-1.5 flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-line/10', emoji ? 'text-accent' : 'text-muted')}>
             <Smile className="h-5 w-5" />
