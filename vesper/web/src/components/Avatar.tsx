@@ -27,7 +27,7 @@ export function Avatar({ name, src, seed, size = 40, presence, className }: { na
       {dot && (
         <span
           className={clsx('absolute bottom-0 right-0 rounded-full ring-2 ring-surface', dot)}
-          style={{ width: Math.max(6, Math.min(11, size * 0.1)), height: Math.max(6, Math.min(11, size * 0.1)) }}
+          style={{ width: Math.max(8, Math.min(19, size * 0.17)), height: Math.max(8, Math.min(19, size * 0.17)) }}
           aria-label="в сети"
         />
       )}
