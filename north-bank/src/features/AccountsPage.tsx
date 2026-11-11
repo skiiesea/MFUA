@@ -1,0 +1,13 @@
+import { FormEvent, useState } from 'react';
+import { ChevronRight, Plus, ShieldCheck, Wallet } from 'lucide-react';
+import type { BankState } from '../types';
+import { PanelHead } from '../components/ui';
+
+function AccountsPage({ data, total, show, busy, name, setName, type, setType, onCreate, onRename, onHistory }: { data: BankState; total: number; show: boolean; busy: boolean; name: string; setName: (value: string) => void; type: 'current' | 'savings'; setType: (value: 'current' | 'savings') => void; onCreate: (event: FormEvent) => void; onRename: (id: number, name: string) => void; onHistory: () => void }) {
+  const [renaming, setRenaming] = useState<number | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  return <div className="module-grid">
+    <section className="panel"><PanelHead title="Все счета" subtitle={'Всего: ' + data.accounts.length + ' · Общий демо-баланс: ' + (show ? money(total) : '•••• ₽')}/><div className="account-grid">{data.accounts.map(item => <div className={'account-big ' + item.color} key={item.id}><div className="account-big-top"><span>{item.type}</span><Wallet size={21}/></div><h3>{item.name}</h3><p>{item.number}</p><strong>{show ? money(item.balance) : '•••• ₽'}</strong><div className="account-actions"><button onClick={() => { setRenaming(item.id); setRenameValue(item.name); }}>Переименовать</button><button onClick={onHistory}>История <ChevronRight size={14}/></button></div>{renaming === item.id && <form className="rename-form" onSubmit={event => { event.preventDefault(); onRename(item.id, renameValue); setRenaming(null); }}><input value={renameValue} onChange={event => setRenameValue(event.target.value)} maxLength={40}/><button disabled={busy}>Сохранить</button></form>}</div>)}</div></section>
+    <section className="panel"><PanelHead title="Открыть демо-счёт" subtitle="Создай дополнительный виртуальный счёт"/><form className="stack-form" onSubmit={onCreate}><div className="field"><label>Название счёта</label><input required maxLength={40} value={name} onChange={event => setName(event.target.value)} placeholder="Например, На поездку"/></div><div className="field"><label>Тип счёта</label><select value={type} onChange={event => setType(event.target.value as 'current' | 'savings')}><option value="current">Текущий</option><option value="savings">Накопительный</option></select></div><button className="primary-btn" disabled={busy}><Plus size={16}/> Создать счёт</button></form><div className="inline-info"><ShieldCheck size={17}/> Новый счёт создаётся с нулевым виртуальным балансом.</div></section>
+  </div>;
+}
