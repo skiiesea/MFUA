@@ -31,10 +31,22 @@ export function EditProfileModal({ user, onClose, onSaved }: { user: Self; onClo
   const avatarInput = useRef<HTMLInputElement>(null);
   const coverInput = useRef<HTMLInputElement>(null);
 
-  const avatarPreview = useMemo(() => (avatar.blob ? URL.createObjectURL(avatar.blob) : avatar.removed ? null : user.avatarUrl), [avatar, user.avatarUrl]);
-  const coverPreview = useMemo(() => (cover.blob ? URL.createObjectURL(cover.blob) : cover.removed ? null : user.coverUrl), [cover, user.coverUrl]);
-  useEffect(() => () => { if (avatar.blob && avatarPreview) URL.revokeObjectURL(avatarPreview); }, [avatarPreview]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => () => { if (cover.blob && coverPreview) URL.revokeObjectURL(coverPreview); }, [coverPreview]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [avatarObjectUrl, setAvatarObjectUrl] = useState<string | null>(null);
+  const [coverObjectUrl, setCoverObjectUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!avatar.blob) { setAvatarObjectUrl(null); return; }
+    const objectUrl = URL.createObjectURL(avatar.blob);
+    setAvatarObjectUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [avatar.blob]);
+  useEffect(() => {
+    if (!cover.blob) { setCoverObjectUrl(null); return; }
+    const objectUrl = URL.createObjectURL(cover.blob);
+    setCoverObjectUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [cover.blob]);
+  const avatarPreview = avatar.blob ? avatarObjectUrl : avatar.removed ? null : user.avatarUrl;
+  const coverPreview = cover.blob ? coverObjectUrl : cover.removed ? null : user.coverUrl;
 
   const set = <K extends keyof typeof d>(k: K, v: (typeof d)[K]) => {
     setD((x) => ({ ...x, [k]: v }));
