@@ -1,0 +1,7 @@
+import { Search, SlidersHorizontal } from 'lucide-react';
+import type { Transaction } from '../types';
+import { PanelHead, TxRow } from '../components/ui';
+
+function HistoryPage({ items, search, setSearch, filter, setFilter, show }: { items: Transaction[]; search: string; setSearch: (value: string) => void; filter: 'all' | 'income' | 'expense'; setFilter: (value: 'all' | 'income' | 'expense') => void; show: boolean }) {
+  return <section className="panel page-panel"><div className="panel-head"><div><h3>История операций</h3><p>{items.length} операций найдено</p></div><div className="search-box"><Search size={17}/><input placeholder="Поиск" value={search} onChange={event => setSearch(event.target.value)}/><SlidersHorizontal size={16}/></div></div><div className="filter-row"><button className={filter === 'all' ? 'filter-active' : ''} onClick={() => setFilter('all')}>Все</button><button className={filter === 'income' ? 'filter-active' : ''} onClick={() => setFilter('income')}>Поступления</button><button className={filter === 'expense' ? 'filter-active' : ''} onClick={() => setFilter('expense')}>Списания</button></div><div className="history-table"><div className="table-labels"><span>ОПЕРАЦИЯ</span><span>ДАТА</span><span>СУММА</span></div>{items.map(item => <TxRow key={item.id} tx={item} show={show}/>)}{items.length === 0 && <div className="empty">По этому запросу ничего не найдено.</div>}</div></section>;
+}
