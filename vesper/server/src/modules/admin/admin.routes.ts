@@ -205,6 +205,7 @@ adminRouter.patch('/root/users/:id', requireRootAdmin, ah(async (req, res) => {
   const target = await prisma.user.findUnique({ where: { id: req.params.id } });
   if (!target) throw notFound('Пользователь не найден');
   if (target.id === req.auth!.user.id && b.banned === true) throw badRequest('Нельзя заблокировать собственный аккаунт');
+  if (target.id === req.auth!.user.id && b.role !== undefined) throw badRequest('Нельзя менять собственную роль');
   if (target.role === 'ROOT_ADMIN' && target.id !== req.auth!.user.id) throw forbidden('Нельзя изменять другой root_admin');
   if (b.publicId !== undefined && b.publicId !== target.publicId) {
     const collision = await prisma.user.findUnique({ where: { publicId: b.publicId }, select: { id: true } });
@@ -273,7 +274,6 @@ adminRouter.get('/root/users/:id/chats', requireRootAdmin, ah(async (req, res) =
       chat: {
         include: {
           members: { include: { user: { select: { id: true, username: true, displayName: true, publicId: true } } } },
-          messages: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' }, take: 1, select: { text: true, createdAt: true } },
         },
       },
     },
@@ -282,12 +282,11 @@ adminRouter.get('/root/users/:id/chats', requireRootAdmin, ah(async (req, res) =
   res.json({ chats: rows.map(({ chat }) => ({
     id: chat.id, type: chat.type, title: chat.title, lastMessageAt: chat.lastMessageAt,
     members: chat.members.map((m) => m.user),
-    lastMessage: chat.messages[0] ?? null,
   })) });
 }));
 
 adminRouter.get('/root/chats/:chatId/messages', requireRootAdmin, ah(async (req, res) => {
-  const { reason, before } = parse(z.object({ reason: rootReason, before: z.string().optional() }), req.query);
+  const { reason, before, targetId } = parse(z.object({ reason: rootReason, before: z.string().optional(), targetId: z.string().min(1) }), req.query);
   const chat = await prisma.chat.findUnique({ where: { id: req.params.chatId }, select: { id: true } });
   if (!chat) throw notFound('Чат не найден');
   const rows = await prisma.message.findMany({
@@ -301,7 +300,8 @@ adminRouter.get('/root/chats/:chatId/messages', requireRootAdmin, ah(async (req,
     },
   });
   const members = await prisma.chatMember.findMany({ where: { chatId: chat.id }, select: { userId: true } });
-  await writeRootAudit(req.auth!.user.id, members[0]?.userId ?? null, 'chat_messages_viewed', reason, req, { chatId: chat.id, count: rows.length });
+  if (!members.some((m) => m.userId === targetId)) throw badRequest('Пользователь не является участником этого чата');
+  await writeRootAudit(req.auth!.user.id, targetId, 'chat_messages_viewed', reason, req, { chatId: chat.id, count: rows.length });
   await prisma.notification.createMany({
     data: members.map((m) => ({
       userId: m.userId, type: 'SECURITY' as const, title: 'Административный просмотр переписки',
