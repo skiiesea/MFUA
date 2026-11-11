@@ -159,14 +159,13 @@ export default function App() {
     <aside className="sidebar">
       <div className="brand"><div className="brand-mark">N</div><span>NORTH</span><small>BANK</small></div>
       <div className="profile-mini"><div className="avatar">{data.profile.name.slice(0, 1) || 'N'}</div><div><b>{data.profile.name}</b><span>Демо-клиент · {data.profile.customerId}</span></div><ChevronDown size={15}/></div>
-      <div className="nav-label">БАНК</div>
-      <nav>{nav.map(item => <NavButton key={item.id} item={item} active={page === item.id} onClick={() => changePage(item.id)}/>)}</nav>
-      <div className="nav-label nav-label-extra">СЕРВИС</div>
+      <div className="nav-label">РАЗДЕЛЫ</div>
       <nav>
+        {nav.map(item => <NavButton key={item.id} item={item} active={page === item.id} onClick={() => changePage(item.id)}/>)}
         <NavButton item={{ id: 'notifications', label: 'Уведомления', icon: Bell }} active={page === 'notifications'} onClick={() => changePage('notifications')} badge={unread}/>
         <NavButton item={{ id: 'support', label: 'Поддержка', icon: Headphones }} active={page === 'support'} onClick={() => changePage('support')}/>
-        <NavButton item={{ id: 'profile', label: 'Профиль и настройки', icon: Settings }} active={page === 'profile'} onClick={() => changePage('profile')}/>
-        <NavButton item={{ id: 'admin', label: 'Демо-администрирование', icon: LayoutDashboard }} active={page === 'admin'} onClick={() => changePage('admin')}/>
+        <NavButton item={{ id: 'profile', label: 'Профиль', icon: Settings }} active={page === 'profile'} onClick={() => changePage('profile')}/>
+        <NavButton item={{ id: 'admin', label: 'Демо-панель', icon: LayoutDashboard }} active={page === 'admin'} onClick={() => changePage('admin')}/>
       </nav>
       <div className="sidebar-bottom">
         <div className="support-card"><div className="support-icon"><ShieldCheck size={19}/></div><b>Локальный демо-режим</b><span>Все счета, карты и операции вымышленные. Сервер доступен только на этом компьютере.</span></div>
