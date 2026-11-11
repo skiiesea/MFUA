@@ -27,6 +27,7 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
   const [uploading, setUploading] = useState(0);
   const [emoji, setEmoji] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
+  const emojiDisplayRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const previousEditingId = useRef<string | null>(null);
   const typingSent = useRef(0);
@@ -157,6 +158,13 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
           </>
         )}
         <div className="relative min-w-0 flex-1">
+          <div
+            ref={emojiDisplayRef}
+            aria-hidden="true"
+            className="no-scrollbar pointer-events-none absolute inset-0 z-0 overflow-y-auto whitespace-pre-wrap break-words px-4 py-3 pr-11 text-[15px] leading-snug"
+          >
+            {text ? <AppleEmojiText text={text} /> : <span className="text-muted/70">Написать сообщение…</span>}
+          </div>
           <textarea
             ref={ref}
             value={text}
@@ -165,6 +173,7 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
             placeholder="Написать сообщение…"
             aria-label="Сообщение"
             onChange={(e) => onChange(e.target.value)}
+            onScroll={(e) => { if (emojiDisplayRef.current) emojiDisplayRef.current.scrollTop = e.currentTarget.scrollTop; }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && window.matchMedia('(hover: hover)').matches) {
                 e.preventDefault();
@@ -179,7 +188,7 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
                 void upload(imgs.map((f, i) => (f.name === 'image.png' ? new File([f], `screenshot-${Date.now()}-${i}.png`, { type: f.type }) : f)));
               }
             }}
-            className="no-scrollbar block max-h-[150px] w-full resize-none rounded-2xl border border-line/10 bg-raised py-3 pl-4 pr-11 text-[15px] leading-snug placeholder:text-muted/70 focus:border-accent/60 focus:outline-none focus:ring-4 focus:ring-accent/15"
+            className="no-scrollbar relative z-10 block max-h-[150px] w-full resize-none rounded-2xl border border-line/10 bg-raised/95 py-3 pl-4 pr-11 text-[15px] leading-snug text-transparent caret-fg placeholder:text-transparent selection:bg-accent/30 selection:text-transparent focus:border-accent/60 focus:outline-none focus:ring-4 focus:ring-accent/15"
           />
           <button type="button" onClick={() => setEmoji((v) => !v)} aria-label="Эмодзи" className={clsx('absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl transition hover:bg-line/10', emoji ? 'text-accent' : 'text-muted')}>
             <Smile className="h-5 w-5" />
