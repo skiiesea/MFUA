@@ -5,7 +5,7 @@
 ## Запуск на Windows / PowerShell
 
 ```powershell
-cd E:\git\MFUA\vesper\bank
+cd E:\git\MFUA\north-bank\bank
 npm install
 npm run dev
 ```
