@@ -4,6 +4,7 @@ import { accentPair, BG_PRESETS } from '../lib/color';
 import { activityLabel, presenceText } from '../lib/format';
 import type { Presence } from '../types';
 import { Avatar } from './Avatar';
+import { AppleEmojiText } from './AppleEmoji';
 
 interface Props {
   name: string;
@@ -56,7 +57,7 @@ export function ProfileHeader({ name, username, publicId, avatarUrl, coverUrl, b
               </span>
             )}
           </p>
-          {status && <p className="mt-3 max-w-xl break-words text-[15px] italic text-fg/85">«{status}»</p>}
+          {status && <p className="mt-3 max-w-xl break-words text-[15px] italic text-fg/85">«<AppleEmojiText text={status} />»</p>}
         </div>
       </div>
     </div>
