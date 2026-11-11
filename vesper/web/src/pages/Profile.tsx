@@ -8,7 +8,7 @@ import { ReportModal } from '../components/ReportModal';
 import { Button, EmptyState, FloatingMenu, IconButton, MenuItem, Modal, Skeleton } from '../components/ui';
 import { api, ApiError, errMsg } from '../lib/api';
 import { accentVars } from '../lib/color';
-import { getSocket } from '../lib/socket';
+import { openSocket } from '../lib/socket';
 import { fmtDate } from '../lib/format';
 import { useAuth } from '../store/auth';
 import { useChats } from '../store/chat';
@@ -53,8 +53,7 @@ function ProfileView({ username }: { username: string }) {
 
   // Профиль не входит в store чатов, поэтому отдельно применяем live presence-события.
   useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+    const socket = openSocket();
     const onPresence = (event: { userId: string; online: boolean | null; lastSeenAt: string | null; activity: 'DND' | 'WORK' | 'FREE' | null }) => {
       setP((current) => current && current.id === event.userId
         ? { ...current, presence: { online: event.online, lastSeenAt: event.lastSeenAt, activity: event.activity } }
