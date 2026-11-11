@@ -113,6 +113,7 @@ function audit(state, action, details) {
 }
 
 function notify(state, title, message) {
+  if (state.profile?.notificationsEnabled === false) return;
   state.notifications.unshift({ id: Date.now() + state.notifications.length, title, message, date: 'Сегодня', read: false });
   state.notifications = state.notifications.slice(0, 50);
 }
