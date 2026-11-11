@@ -3,7 +3,7 @@ import { ArrowLeftRight, ArrowUpRight, BriefcaseBusiness, ChevronRight, Plus, Se
 import type { Account, Operation } from '../types';
 import { PanelHead } from '../components/ui';
 
-function PaymentsPage({ accounts, onOperation }: { accounts: Account[]; onOperation: (kind: Operation) => void }) {
+export function PaymentsPage({ accounts, onOperation }: { accounts: Account[]; onOperation: (kind: Operation) => void }) {
   const actions: { kind: Operation; title: string; desc: string; icon: ReactNode; color: string }[] = [
     { kind: 'transfer', title: 'Демо-перевод', desc: 'Симуляция отправки виртуальных средств условному получателю', icon: <Send/>, color: 'purple' },
     { kind: 'internal', title: 'Между своими счетами', desc: 'Перемещение виртуального баланса между счетами', icon: <ArrowLeftRight/>, color: 'blue' },
