@@ -2,7 +2,7 @@ import type { Prisma, User, Visibility } from '@prisma/client';
 import { isOnline } from '../realtime/hub';
 import { parseNotif, parseUi } from './settings';
 
-export const mediaUrl = (key?: string | null) => (key ? `/media/${key}` : null);
+export const mediaUrl = (key?: string | null) => (key ? `/api/media/${key}` : null);
 
 export const cardSelect = {
   id: true,
