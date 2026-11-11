@@ -1,6 +1,7 @@
 import { RefreshCw, ShieldCheck } from 'lucide-react';
 import type { AdminSummary, BankState } from '../types';
 import { PanelHead, Stat } from '../components/ui';
+import { money } from '../format';
 
 export function AdminPage({ data, admin, onRefresh }: { data: BankState; admin: AdminSummary | null; onRefresh: () => void }) {
   const summary = admin?.summary;
