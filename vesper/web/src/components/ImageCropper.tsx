@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function ImageCropper({ file, aspect, outWidth, round, title, onCancel, onDone }: Props) {
-  const [url] = useState(() => URL.createObjectURL(file));
+  const [url, setUrl] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [nat, setNat] = useState<{ w: number; h: number } | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -21,7 +21,11 @@ export function ImageCropper({ file, aspect, outWidth, round, title, onCancel, o
   const vw = Math.min(360, window.innerWidth - 72);
   const vh = vw / aspect;
 
-  useEffect(() => () => URL.revokeObjectURL(url), [url]);
+  useEffect(() => {
+    const objectUrl = URL.createObjectURL(file);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
 
   const base = nat ? Math.max(vw / nat.w, vh / nat.h) : 1;
   const scale = base * zoom;
@@ -69,7 +73,7 @@ export function ImageCropper({ file, aspect, outWidth, round, title, onCancel, o
         >
           <img
             ref={imgRef}
-            src={url}
+            src={url ?? undefined}
             alt=""
             draggable={false}
             onLoad={(e) => setNat({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
