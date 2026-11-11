@@ -10,6 +10,7 @@ datasource db {
 enum Role {
   USER
   ADMIN
+  ROOT_ADMIN
 }
 enum Activity {
   AUTO
@@ -300,4 +301,19 @@ model Notification {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+
+model AdminAuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  targetId  String?
+  action    String
+  reason    String
+  metadata  Json     @default("{}")
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([targetId, createdAt])
 }
