@@ -157,7 +157,7 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
             <IconButton label="Прикрепить файл" onClick={() => fileRef.current?.click()}><Paperclip className="h-5 w-5" /></IconButton>
           </>
         )}
-        <div className="relative min-w-0 flex-1">
+        <div className="relative min-w-0 flex-1 rounded-2xl bg-raised">
           <div
             ref={emojiDisplayRef}
             aria-hidden="true"
@@ -188,7 +188,7 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
                 void upload(imgs.map((f, i) => (f.name === 'image.png' ? new File([f], `screenshot-${Date.now()}-${i}.png`, { type: f.type }) : f)));
               }
             }}
-            className="no-scrollbar relative z-10 block max-h-[150px] w-full resize-none rounded-2xl border border-line/10 bg-raised/95 py-3 pl-4 pr-11 text-[15px] leading-snug text-transparent caret-fg placeholder:text-transparent selection:bg-accent/30 selection:text-transparent focus:border-accent/60 focus:outline-none focus:ring-4 focus:ring-accent/15"
+            className="no-scrollbar relative z-10 block max-h-[150px] w-full resize-none rounded-2xl border border-line/10 bg-transparent py-3 pl-4 pr-11 text-[15px] leading-snug text-transparent caret-fg placeholder:text-transparent selection:bg-accent/30 selection:text-transparent focus:border-accent/60 focus:outline-none focus:ring-4 focus:ring-accent/15"
           />
           <button type="button" onClick={() => setEmoji((v) => !v)} aria-label="Эмодзи" className={clsx('absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl transition hover:bg-line/10', emoji ? 'text-accent' : 'text-muted')}>
             <Smile className="h-5 w-5" />
