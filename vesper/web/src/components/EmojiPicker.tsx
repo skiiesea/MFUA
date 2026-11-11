@@ -30,7 +30,7 @@ export function EmojiPicker({ onPick, onClose }: { onPick: (e: string) => void; 
           <button key={k} onClick={() => setTab(k)} className={clsx('emoji-font flex h-9 flex-1 items-center justify-center rounded-lg text-lg transition', tab === k ? 'bg-line/15' : 'opacity-60 hover:bg-line/10 hover:opacity-100')}>{k}</button>
         ))}
       </div>
-      <div className="grid max-h-52 grid-cols-8 gap-0.5 overflow-y-auto">
+      <div className="no-scrollbar grid max-h-52 grid-cols-8 gap-0.5 overflow-y-auto">
         {SETS[tab].map((e) => (
           <button key={e} onClick={() => onPick(e)} className="emoji-font flex h-9 items-center justify-center rounded-lg text-xl transition hover:scale-110 hover:bg-line/10">{e}</button>
         ))}
