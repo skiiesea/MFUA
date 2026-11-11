@@ -18,9 +18,18 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
 
 /** Роль берётся из БД при каждом запросе — не из клиента и не из токена. */
 export const requireAdmin: RequestHandler = (req, _res, next) => {
-  if (req.auth?.user.role !== 'ADMIN') {
+  if (req.auth?.user.role !== 'ADMIN' && req.auth?.user.role !== 'ROOT_ADMIN') {
     logs.security.warn({ event: 'admin_access_denied', userId: req.auth?.user.id, ip: req.ip, path: req.originalUrl.split('?')[0] }, 'Non-admin tried to access admin API');
     return next(forbidden('Требуются права администратора'));
+  }
+  next();
+};
+
+/** Самые чувствительные операции доступны только владельцу системы. */
+export const requireRootAdmin: RequestHandler = (req, _res, next) => {
+  if (req.auth?.user.role !== 'ROOT_ADMIN') {
+    logs.security.warn({ event: 'root_admin_access_denied', userId: req.auth?.user.id, ip: req.ip, path: req.originalUrl.split('?')[0] }, 'Non-root admin tried to access root API');
+    return next(forbidden('Требуются права root_admin'));
   }
   next();
 };
