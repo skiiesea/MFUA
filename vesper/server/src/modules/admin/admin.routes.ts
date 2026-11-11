@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { Prisma } from '@prisma/client';
 import path from 'node:path';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -206,7 +207,7 @@ adminRouter.patch('/root/users/:id', requireRootAdmin, ah(async (req, res) => {
   }
 
   const { reason, emailVerified, banned, banReason, ...fields } = b;
-  const data: Record<string, unknown> = { ...fields };
+  const data: Prisma.UserUpdateInput = { ...fields };
   if (b.email && b.email !== target.email) {
     data.emailVerifiedAt = null;
     await prisma.emailToken.updateMany({ where: { userId: target.id, type: 'VERIFY', usedAt: null }, data: { usedAt: new Date() } });
