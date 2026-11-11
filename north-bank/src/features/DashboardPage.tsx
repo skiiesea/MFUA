@@ -2,7 +2,7 @@ import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Bell, BriefcaseBusiness, C
 import type { BankState, Operation, Page } from '../types';
 import { AccountRow, PanelHead, QuickAction, Stat, TxRow } from '../components/ui';
 
-function Dashboard({ data, total, income, expenses, show, onPage, onOperation }: { data: BankState; total: number; income: number; expenses: number; show: boolean; onPage: (page: Page) => void; onOperation: (kind: Operation) => void }) {
+export function Dashboard({ data, total, income, expenses, show, onPage, onOperation }: { data: BankState; total: number; income: number; expenses: number; show: boolean; onPage: (page: Page) => void; onOperation: (kind: Operation) => void }) {
   return <>
     <section className="hero-grid">
       <div className="balance-card"><div className="balance-top"><span>ОБЩИЙ БАЛАНС</span><span className="balance-live"><i/> ДЕМО-СЧЕТА</span></div><div className="balance-number">{show ? money(total) : '•••••• ₽'}</div><div className="balance-foot"><span>Сумма на {data.accounts.length} счетах</span><span>Локальное хранение</span></div><div className="balance-actions"><button onClick={() => onOperation('transfer')}><ArrowUpRight size={17}/> Перевести</button><button onClick={() => onOperation('topup')}><Plus size={17}/> Пополнить</button><button onClick={() => onPage('history')}><FileText size={17}/> Выписка</button></div><div className="orb orb-one"/><div className="orb orb-two"/></div>
