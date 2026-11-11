@@ -7,6 +7,7 @@ import {
   RefreshCw, LockKeyhole, TrendingUp, CircleDollarSign, Send, BadgeCheck,
 } from 'lucide-react';
 import { apiRequest, getAdminSummary, getBankState, postBankAction } from './api';
+import { money } from './format';
 import type { AdminSummary, BankState, Page, Operation, SavingsGoal } from './types';
 import { Dashboard } from './features/DashboardPage';
 import { AccountsPage } from './features/AccountsPage';
@@ -20,7 +21,6 @@ import { ProfilePage } from './features/ProfilePage';
 import { SupportPage } from './features/SupportPage';
 import { AdminPage } from './features/AdminPage';
 
-const money = (n: number) => new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(n);
 const pageNames: Record<Page, string> = {
   home: 'Главная', accounts: 'Мои счета', cards: 'Карты', payments: 'Платежи и переводы',
   history: 'История операций', analytics: 'Аналитика', savings: 'Накопления',
