@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/player_controller.gd" id="1_controller"]
 
@@ -10,15 +10,17 @@ height = 1.8
 script = ExtResource("1_controller")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.9, 0)
 shape = SubResource("CapsuleShape_player")
 
 [node name="Head" type="Node3D" parent="."]
-position = Vector3(0, 0.62, 0)
+position = Vector3(0, 1.58, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Head"]
 fov = 78.0
 near = 0.05
 
 [node name="InteractionRay" type="RayCast3D" parent="Head/Camera3D"]
-target_position = Vector3(0, 0, -2.5)
+target_position = Vector3(0, 0, -3)
 collide_with_areas = true
+collide_with_bodies = true
