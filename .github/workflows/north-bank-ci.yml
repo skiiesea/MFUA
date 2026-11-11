@@ -1,0 +1,27 @@
+name: North Bank CI
+
+on:
+  push:
+    branches: [codex/personal-bank]
+    paths:
+      - "north-bank/**"
+      - ".github/workflows/north-bank-ci.yml"
+  pull_request:
+    paths:
+      - "north-bank/**"
+      - ".github/workflows/north-bank-ci.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: north-bank
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run build
+      - run: node --check server/index.mjs
