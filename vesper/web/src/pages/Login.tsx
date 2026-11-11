@@ -1,10 +1,9 @@
-import { AlertCircle, ArrowLeft, Eye, EyeOff, KeyRound, Lock, Mail, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, KeyRound, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Input } from '../components/ui';
 import { api, ApiError } from '../lib/api';
 import { useAuth } from '../store/auth';
-import { toast } from '../store/ui';
 import type { Self } from '../types';
 import { AuthLayout } from './AuthLayout';
 
@@ -55,13 +54,8 @@ export function LoginPage() {
     }
   };
 
-  const resend = async () => {
-    try {
-      await api.post('/auth/resend-verification', { identifier });
-      toast.success('Если аккаунт существует, мы отправили новое письмо');
-    } catch (e) {
-      if (e instanceof ApiError) toast.error(e.message);
-    }
+  const openVerification = () => {
+    navigate('/verify-email', { state: { identifier } });
   };
 
   if (ticket) {
@@ -71,7 +65,7 @@ export function LoginPage() {
           <Input
             label={useBackup ? 'Резервный код' : 'Код из приложения'}
             value={code}
-            onChange={(e) => setCode(useBackup ? e.target.value.toUpperCase() : e.target.value.replace(/\D/g, '').slice(0, 6))}
+            onChange={(e) => setCode(useBackup ? e.target.value.toUpperCase() : e.target.value.replace(/\\D/g, '').slice(0, 6))}
             inputMode={useBackup ? 'text' : 'numeric'}
             autoComplete="one-time-code"
             placeholder={useBackup ? 'XXXXX-XXXXX' : '000000'}
@@ -83,7 +77,7 @@ export function LoginPage() {
           <Button type="submit" size="lg" className="w-full" loading={busy} disabled={code.length < 6}>Войти</Button>
           <div className="flex items-center justify-between text-sm">
             <button type="button" className="inline-flex items-center gap-1.5 text-muted hover:text-fg" onClick={() => { setTicket(null); setCode(''); setError(null); }}>
-              <ArrowLeft className="h-4 w-4" /> Назад
+              Назад
             </button>
             <button type="button" className="font-semibold text-accent hover:underline" onClick={() => { setUseBackup(!useBackup); setCode(''); }}>
               {useBackup ? 'Использовать код из приложения' : 'Использовать резервный код'}
@@ -111,7 +105,7 @@ export function LoginPage() {
           <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="h-4 w-4 cursor-pointer rounded accent-[rgb(var(--c-accent))]" />
           Запомнить меня на этом устройстве
         </label>
-        {error && <ErrorBox error={error} onResend={error.code === 'EMAIL_NOT_VERIFIED' ? resend : undefined} />}
+        {error && <ErrorBox error={error} onResend={error.code === 'EMAIL_NOT_VERIFIED' ? openVerification : undefined} />}
         <Button type="submit" size="lg" className="w-full" loading={busy} disabled={!identifier || !password}>Войти</Button>
       </form>
       <p className="mt-8 text-center text-sm text-muted">
@@ -127,7 +121,7 @@ function ErrorBox({ error, onResend }: { error: ApiError; onResend?: () => void 
       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
       <div>
         <p className="text-fg">{error.message}</p>
-        {onResend && <button type="button" onClick={onResend} className="mt-1.5 font-semibold text-accent hover:underline">Отправить письмо ещё раз</button>}
+        {onResend && <button type="button" onClick={onResend} className="mt-1.5 font-semibold text-accent hover:underline">Открыть подтверждение email и ввести код</button>}
       </div>
     </div>
   );
