@@ -31,13 +31,13 @@ function isEmoji(value: string): boolean {
   return /\p{Extended_Pictographic}/u.test(value) || /[0-9#*]\uFE0F?\u20E3/u.test(value) || /\p{Regional_Indicator}{2}/u.test(value);
 }
 
-export function AppleEmojiText({ text }: { text: string }) {
+export function AppleEmojiText({ text, size = 18 }: { text: string; size?: number }) {
   if (!graphemeSegmenter) return <>{text}</>;
   return (
     <>
       {[...graphemeSegmenter.segment(text)].map(({ segment }, index) =>
         isEmoji(segment)
-          ? <AppleEmoji key={index} value={segment} size={18} />
+          ? <AppleEmoji key={index} value={segment} size={size} />
           : <span key={index}>{segment}</span>,
       )}
     </>
