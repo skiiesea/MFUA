@@ -17,7 +17,7 @@ function Rich({ text, mine }: { text: string; mine: boolean }) {
         i % 2 === 1 ? (
           <a key={i} href={p} target="_blank" rel="noopener noreferrer nofollow" className="break-all underline underline-offset-2 hover:opacity-80">{p}</a>
         ) : (
-          p.split(MENTION_RE).map((q, j) => (j % 2 === 1 ? <span key={`${i}-${j}`} className={clsx('font-semibold', mine ? 'text-white' : 'text-accent')}>{q}</span> : <AppleEmojiText text={q} />))
+          p.split(MENTION_RE).map((q, j) => (j % 2 === 1 ? <span key={`${i}-${j}`} className={clsx('font-semibold', mine ? 'text-white' : 'text-accent')}>{q}</span> : <AppleEmojiText key={`${i}-${j}`} text={q} />))
         ),
       )}
     </>
