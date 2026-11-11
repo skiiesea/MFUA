@@ -1,4 +1,4 @@
-import { BadgeCheck, Snowflake, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, LockKeyhole, Snowflake } from 'lucide-react';
 import type { Account, BankCard } from '../types';
 import { PanelHead } from '../components/ui';
 
