@@ -4,6 +4,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { EditProfileModal } from '../components/EditProfileModal';
 import { Page } from '../components/Page';
 import { ProfileHeader } from '../components/ProfileHeader';
+import { AppleEmojiText } from '../components/AppleEmoji';
 import { ReportModal } from '../components/ReportModal';
 import { Button, EmptyState, FloatingMenu, IconButton, MenuItem, Modal, Skeleton } from '../components/ui';
 import { api, ApiError, errMsg } from '../lib/api';
@@ -135,7 +136,7 @@ function ProfileView({ username }: { username: string }) {
           <div className="mt-5 grid gap-5 sm:grid-cols-[1.6fr_1fr]">
             <section className="card p-5 sm:p-6">
               <h2 className="font-display text-sm font-semibold">О себе</h2>
-              {p.about ? <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed">{p.about}</p> : <p className="mt-3 text-sm text-muted">{isMe ? 'Расскажите о себе: нажмите «Редактировать».' : 'Пользователь пока ничего не рассказал о себе.'}</p>}
+              {p.about ? <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed"><AppleEmojiText text={p.about} /></p> : <p className="mt-3 text-sm text-muted">{isMe ? 'Расскажите о себе: нажмите «Редактировать».' : 'Пользователь пока ничего не рассказал о себе.'}</p>}
             </section>
             <section className="card p-5 sm:p-6">
               <h2 className="font-display text-sm font-semibold">Информация</h2>
