@@ -116,7 +116,7 @@ function BubbleImpl({ m, chat, mine, meId, first, last, status, highlight, onMen
                 const meReacted = r.userIds.includes(meId);
                 return (
                   <button key={r.emoji} onClick={() => onReact(m, r.emoji)} className={clsx('inline-flex h-7 items-center gap-1 rounded-full border px-2 text-xs font-semibold transition active:scale-90', meReacted ? 'border-accent/60 bg-accent/20 text-fg' : 'border-line/10 bg-raised text-muted hover:border-line/25')}>
-                    <span className="text-sm">{r.emoji}</span>{r.userIds.length}
+                    <span className="emoji-font text-sm">{r.emoji}</span>{r.userIds.length}
                   </button>
                 );
               })}
