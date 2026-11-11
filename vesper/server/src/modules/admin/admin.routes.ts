@@ -237,7 +237,7 @@ adminRouter.patch('/root/users/:id', requireRootAdmin, ah(async (req, res) => {
 
   const updated = await prisma.user.update({ where: { id: target.id }, data });
   if (b.publicId !== undefined && b.publicId !== target.publicId) {
-    await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('"User"', 'publicId'), GREATEST((SELECT COALESCE(MAX("publicId"), 1) FROM "User"), 1))`;
+    await prisma.$queryRaw`SELECT setval(pg_get_serial_sequence('"User"', 'publicId'), GREATEST((SELECT COALESCE(MAX("publicId"), 1) FROM "User"), 1))`;
   }
   if (b.banned === true || b.role === 'USER' && target.role === 'ADMIN') await revokeAllSessions(target.id);
   const changedFields = Object.keys(data).filter((k) => !['emailVerifiedAt', 'bannedAt'].includes(k));
