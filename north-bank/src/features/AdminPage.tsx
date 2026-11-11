@@ -1,4 +1,4 @@
-import { RefreshCw, ShieldCheck } from 'lucide-react';
+import { Activity, CreditCard, Headphones, RefreshCw, ShieldCheck, Wallet } from 'lucide-react';
 import type { AdminSummary, BankState } from '../types';
 import { PanelHead, Stat } from '../components/ui';
 import { money } from '../format';
