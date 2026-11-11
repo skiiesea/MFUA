@@ -327,7 +327,7 @@ export function ChatView({ chatId }: { chatId: string }) {
         chat={chat} replyTo={replyTo} editing={editing}
         onCancel={() => { setReplyTo(null); setEditing(null); }}
         onSend={(t, a) => { const r = replyTo; setReplyTo(null); void send(t, a, r); }}
-        onEdit={async (t) => { const e = editing!; setEditing(null); if (t === e.text) return; const r = await act('message:edit', { id: e.id, text: t }); if (r?.message) st().onUpdated(r.message); }}
+        onEdit={async (t) => { const e = editing!; if (t === e.text) { setEditing(null); return true; } const r = await act('message:edit', { id: e.id, text: t }); if (!r?.message) return false; st().onUpdated(r.message); setEditing(null); return true; }}
       />
 
       <FloatingMenu anchor={menu} onClose={() => setMenu(null)} width={236}>
