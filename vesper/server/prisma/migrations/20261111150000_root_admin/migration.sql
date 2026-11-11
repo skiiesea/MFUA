@@ -15,5 +15,3 @@ CREATE TABLE "AdminAuditLog" (
 CREATE INDEX "AdminAuditLog_actorId_createdAt_idx" ON "AdminAuditLog"("actorId", "createdAt");
 CREATE INDEX "AdminAuditLog_targetId_createdAt_idx" ON "AdminAuditLog"("targetId", "createdAt");
 
--- Promote only the explicitly named owner account. No other admin is elevated.
-UPDATE "User" SET "role" = 'ROOT_ADMIN' WHERE "username" = 'root_admin';
