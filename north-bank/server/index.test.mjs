@@ -84,6 +84,14 @@ test('North Bank local API covers demo modules and persists state', async t => {
   state = await accountRename.json();
   assert.ok(state.accounts.some(item => item.name === 'Путешествие'));
 
+  const cardCreate = await fetch(base + '/api/cards', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'Карта путешествий', accountId: 1 }),
+  });
+  assert.equal(cardCreate.status, 201);
+  state = await cardCreate.json();
+  assert.ok(state.cards.some(item => item.name === 'Карта путешествий' && item.accountId === 1));
+
   const cardToggle = await fetch(base + '/api/cards/1/toggle', { method: 'POST' });
   assert.equal(cardToggle.status, 200);
   state = await cardToggle.json();
@@ -114,10 +122,11 @@ test('North Bank local API covers demo modules and persists state', async t => {
 
   const profile = await fetch(base + '/api/profile', {
     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ theme: 'light', notificationsEnabled: false }),
+    body: JSON.stringify({ name: 'Демо Александр', theme: 'light', notificationsEnabled: false }),
   });
   assert.equal(profile.status, 200);
   state = await profile.json();
+  assert.equal(state.profile.name, 'Демо Александр');
   assert.equal(state.profile.theme, 'light');
   assert.equal(state.profile.notificationsEnabled, false);
 
