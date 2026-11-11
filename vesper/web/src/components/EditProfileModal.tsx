@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { Camera, CheckCircle2, Trash2, XCircle } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, ApiError, errMsg } from '../lib/api';
 import { ACCENTS, BG_PRESETS } from '../lib/color';
 import { useAuth } from '../store/auth';
