@@ -1,6 +1,7 @@
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Bell, BriefcaseBusiness, ChevronRight, CreditCard, FileText, Plus, ShieldCheck, Sparkles, Target, Wallet } from 'lucide-react';
 import type { BankState, Operation, Page } from '../types';
 import { AccountRow, PanelHead, QuickAction, Stat, TxRow } from '../components/ui';
+import { money } from '../format';
 
 export function Dashboard({ data, total, income, expenses, show, onPage, onOperation }: { data: BankState; total: number; income: number; expenses: number; show: boolean; onPage: (page: Page) => void; onOperation: (kind: Operation) => void }) {
   return <>
