@@ -169,7 +169,7 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
             }}
             className="no-scrollbar block max-h-[150px] w-full resize-none rounded-2xl border border-line/10 bg-raised py-3 pl-4 pr-11 text-[15px] leading-snug placeholder:text-muted/70 focus:border-accent/60 focus:outline-none focus:ring-4 focus:ring-accent/15"
           />
-          <button type="button" onClick={() => setEmoji((v) => !v)} aria-label="Эмодзи" className={clsx('absolute bottom-1.5 right-1.5 flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-line/10', emoji ? 'text-accent' : 'text-muted')}>
+          <button type="button" onClick={() => setEmoji((v) => !v)} aria-label="Эмодзи" className={clsx('absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl transition hover:bg-line/10', emoji ? 'text-accent' : 'text-muted')}>
             <Smile className="h-5 w-5" />
           </button>
           {emoji && <EmojiPicker onClose={() => setEmoji(false)} onPick={(e) => { setText((t) => t + e); ref.current?.focus(); }} />}
