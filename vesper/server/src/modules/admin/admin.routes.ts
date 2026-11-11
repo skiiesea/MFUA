@@ -187,6 +187,19 @@ adminRouter.get('/root/audit', requireRootAdmin, ah(async (req, res) => {
   res.json({ total, logs: rows });
 }));
 
+adminRouter.get('/root/users/:id', requireRootAdmin, ah(async (req, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!user) throw notFound('Пользователь не найден');
+  res.json({ user: {
+    id: user.id, publicId: user.publicId, username: user.username, displayName: user.displayName,
+    email: user.email, emailVerified: !!user.emailVerifiedAt, role: user.role,
+    statusText: user.statusText, about: user.about, accentColor: user.accentColor, profileBg: user.profileBg,
+    activity: user.activity, privacyMessages: user.privacyMessages, privacyRequests: user.privacyRequests,
+    privacyOnline: user.privacyOnline, privacyLastSeen: user.privacyLastSeen, privacyProfile: user.privacyProfile,
+    banned: !!user.bannedAt, banReason: user.banReason, createdAt: user.createdAt, lastSeenAt: user.lastSeenAt,
+  } });
+}));
+
 adminRouter.patch('/root/users/:id', requireRootAdmin, ah(async (req, res) => {
   const b = parse(rootProfileSchema, req.body);
   const target = await prisma.user.findUnique({ where: { id: req.params.id } });
@@ -222,6 +235,9 @@ adminRouter.patch('/root/users/:id', requireRootAdmin, ah(async (req, res) => {
   }
 
   const updated = await prisma.user.update({ where: { id: target.id }, data });
+  if (b.publicId !== undefined && b.publicId !== target.publicId) {
+    await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('"User"', 'publicId'), GREATEST((SELECT COALESCE(MAX("publicId"), 1) FROM "User"), 1))`;
+  }
   if (b.banned === true || b.role === 'USER' && target.role === 'ADMIN') await revokeAllSessions(target.id);
   const changedFields = Object.keys(data).filter((k) => !['emailVerifiedAt', 'bannedAt'].includes(k));
   if (b.emailVerified !== undefined || (b.email && b.email !== target.email)) changedFields.push('emailVerified');
