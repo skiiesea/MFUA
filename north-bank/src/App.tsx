@@ -20,12 +20,8 @@ type Page = 'home' | 'accounts' | 'cards' | 'payments' | 'history' | 'profile';
 
 export default function App() {
   const [page, setPage] = useState<Page>('home');
-  const [accounts, setAccounts] = useState<Account[]>(() => {
-    try { const saved = localStorage.getItem('north-demo-accounts'); return saved ? JSON.parse(saved) as Account[] : initialAccounts; } catch { return initialAccounts; }
-  });
-  const [tx, setTx] = useState<Tx[]>(() => {
-    try { const saved = localStorage.getItem('north-demo-transactions'); return saved ? JSON.parse(saved) as Tx[] : initialTx; } catch { return initialTx; }
-  });
+  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
+  const [tx, setTx] = useState<Tx[]>(initialTx);
   useEffect(() => {
     let cancelled = false;
     fetch('/api/state')
