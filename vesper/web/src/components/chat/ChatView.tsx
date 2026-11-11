@@ -9,6 +9,7 @@ import { chatTitle, useChats } from '../../store/chat';
 import { toast } from '../../store/ui';
 import type { AttachmentDto, Chat, Message } from '../../types';
 import { Avatar } from '../Avatar';
+import { AppleEmoji } from '../AppleEmoji';
 import { ReportModal } from '../ReportModal';
 import { Button, EmptyState, FloatingMenu, IconButton, MenuItem, Modal, Skeleton } from '../ui';
 import { Composer } from './Composer';
@@ -333,7 +334,7 @@ export function ChatView({ chatId }: { chatId: string }) {
         {mm && (
           <>
             <div className="flex justify-between px-1.5 pb-1.5 pt-1">
-              {QUICK.map((e) => <button key={e} onClick={() => { react(mm, e); setMenu(null); }} className="emoji-font flex h-9 w-9 items-center justify-center rounded-full text-xl transition hover:scale-125 hover:bg-line/10">{e}</button>)}
+              {QUICK.map((e) => <button key={e} onClick={() => { react(mm, e); setMenu(null); }} className="flex h-9 w-9 items-center justify-center rounded-full transition hover:scale-125 hover:bg-line/10"><AppleEmoji value={e} size={24} /></button>)}
             </div>
             <div className="mb-1 border-t border-line/10" />
             <MenuItem icon={<Reply />} onClick={() => { setReplyTo(mm); setEditing(null); setMenu(null); }}>Ответить</MenuItem>
