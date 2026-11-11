@@ -24,6 +24,9 @@ export function EditProfileModal({ user, onClose, onSaved }: { user: Self; onClo
   const [d, setD] = useState({ displayName: user.displayName, username: user.username, statusText: user.statusText, about: user.about, accentColor: user.accentColor, profileBg: user.profileBg, activity: user.activity });
   const [avatar, setAvatar] = useState<Img>({ blob: null, removed: false });
   const [cover, setCover] = useState<Img>({ blob: null, removed: false });
+  const [savedAvatarUrl, setSavedAvatarUrl] = useState(user.avatarUrl);
+  const [savedCoverUrl, setSavedCoverUrl] = useState(user.coverUrl);
+  const [mediaBusy, setMediaBusy] = useState(false);
   const [crop, setCrop] = useState<{ kind: 'avatar' | 'cover'; file: File } | null>(null);
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -45,8 +48,8 @@ export function EditProfileModal({ user, onClose, onSaved }: { user: Self; onClo
     setCoverObjectUrl(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [cover.blob]);
-  const avatarPreview = avatar.blob ? avatarObjectUrl : avatar.removed ? null : user.avatarUrl;
-  const coverPreview = cover.blob ? coverObjectUrl : cover.removed ? null : user.coverUrl;
+  const avatarPreview = avatar.blob ? avatarObjectUrl : avatar.removed ? null : savedAvatarUrl;
+  const coverPreview = cover.blob ? coverObjectUrl : cover.removed ? null : savedCoverUrl;
 
   const set = <K extends keyof typeof d>(k: K, v: (typeof d)[K]) => {
     setD((x) => ({ ...x, [k]: v }));
@@ -70,6 +73,63 @@ export function EditProfileModal({ user, onClose, onSaved }: { user: Self; onClo
     if (!/^image\/(jpeg|png|webp|gif)$/.test(f.type)) return toast.error('Выберите изображение JPG, PNG, WebP или GIF');
     if (f.size > 8 * 1024 * 1024) return toast.error('Файл больше 8 МБ');
     setCrop({ kind, file: f });
+  };
+
+  const changeActivity = async (activity: Activity) => {
+    set('activity', activity);
+    try {
+      const r = await api.patch<{ user: Self }>('/users/me', { ...d, activity });
+      setUser(r.user);
+      onSaved();
+    } catch (e) {
+      setD((current) => ({ ...current, activity: user.activity }));
+      toast.error(errMsg(e));
+    }
+  };
+
+  const applyImage = async (kind: 'avatar' | 'cover', blob: Blob) => {
+    setMediaBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', blob, `${kind}.jpg`);
+      const r = await api.post<{ user: Self }>(`/users/me/${kind}`, fd);
+      setUser(r.user);
+      if (kind === 'avatar') {
+        setSavedAvatarUrl(r.user.avatarUrl);
+        setAvatar({ blob: null, removed: false });
+      } else {
+        setSavedCoverUrl(r.user.coverUrl);
+        setCover({ blob: null, removed: false });
+      }
+      setCrop(null);
+      onSaved();
+      toast.success(kind === 'avatar' ? 'Аватар сохранён' : 'Обложка сохранена');
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setMediaBusy(false);
+    }
+  };
+
+  const removeImage = async (kind: 'avatar' | 'cover') => {
+    setMediaBusy(true);
+    try {
+      const r = await api.del<{ user: Self }>(`/users/me/${kind}`);
+      setUser(r.user);
+      if (kind === 'avatar') {
+        setSavedAvatarUrl(null);
+        setAvatar({ blob: null, removed: false });
+      } else {
+        setSavedCoverUrl(null);
+        setCover({ blob: null, removed: false });
+      }
+      onSaved();
+      toast.success(kind === 'avatar' ? 'Аватар удалён' : 'Обложка удалена');
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setMediaBusy(false);
+    }
   };
 
   const save = async () => {
@@ -115,9 +175,9 @@ export function EditProfileModal({ user, onClose, onSaved }: { user: Self; onClo
           <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={pick('avatar')} />
           <input ref={coverInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={pick('cover')} />
           <Button variant="soft" size="sm" icon={<Camera className="h-4 w-4" />} onClick={() => avatarInput.current?.click()}>{avatarPreview ? 'Заменить аватар' : 'Загрузить аватар'}</Button>
-          {avatarPreview && <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => setAvatar({ blob: null, removed: true })}>Удалить аватар</Button>}
+          {avatarPreview && <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => void removeImage('avatar')} disabled={mediaBusy}>Удалить аватар</Button>}
           <Button variant="soft" size="sm" icon={<Camera className="h-4 w-4" />} onClick={() => coverInput.current?.click()}>{coverPreview ? 'Заменить обложку' : 'Загрузить обложку'}</Button>
-          {coverPreview && <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => setCover({ blob: null, removed: true })}>Удалить обложку</Button>}
+          {coverPreview && <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => void removeImage('cover')} disabled={mediaBusy}>Удалить обложку</Button>}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -131,7 +191,7 @@ export function EditProfileModal({ user, onClose, onSaved }: { user: Self; onClo
 
         <div>
           <p className="mb-2 text-sm font-medium">Доступность</p>
-          <Segmented value={d.activity} onChange={(v) => set('activity', v)} options={ACTIVITY_OPTIONS} />
+          <Segmented value={d.activity} onChange={(v) => void changeActivity(v)} options={ACTIVITY_OPTIONS} />
         </div>
 
         <div>
@@ -165,7 +225,7 @@ export function EditProfileModal({ user, onClose, onSaved }: { user: Self; onClo
       {crop && (
         <ImageCropper file={crop.file} aspect={crop.kind === 'avatar' ? 1 : 1600 / 560} outWidth={crop.kind === 'avatar' ? 512 : 1600} round={crop.kind === 'avatar'} title={crop.kind === 'avatar' ? 'Кадрирование аватара' : 'Кадрирование обложки'}
           onCancel={() => setCrop(null)}
-          onDone={(blob) => { (crop.kind === 'avatar' ? setAvatar : setCover)({ blob, removed: false }); setCrop(null); }} />
+          onDone={(blob) => { void applyImage(crop.kind, blob); }} />
       )}
     </Modal>
   );
