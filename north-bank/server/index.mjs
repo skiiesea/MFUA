@@ -218,6 +218,26 @@ const server = createServer(async (request, response) => {
       });
       return send(response, 200, state);
     }
+    if (method === 'POST' && url.pathname === '/api/cards') {
+      const input = await readBody(request);
+      const state = await serialize(async () => {
+        const current = await readState();
+        const name = typeof input.name === 'string' ? input.name.trim().slice(0, 40) : '';
+        const accountId = Number(input.accountId);
+        const account = current.accounts.find(item => item.id === accountId);
+        if (!name) fail('Укажи название демо-карты');
+        if (!account) fail('Счёт для карты не найден', 404);
+        if (current.cards.length >= 6) fail('В демо-режиме можно создать не более 6 карт');
+        const id = Math.max(0, ...current.cards.map(item => item.id)) + 1;
+        const card = { id, accountId, name, last4: String(4000 + id * 79).slice(-4), network: 'NORTH', status: 'active', type: 'DEBIT · DEMO' };
+        current.cards.push(card);
+        audit(current, 'Создан макет демо-карты', name + ' · ' + account.name);
+        notify(current, 'Создан макет карты', name + ' привязана к ' + account.name + '.');
+        await saveState(current);
+        return current;
+      });
+      return send(response, 201, state);
+    }
     const cardMatch = url.pathname.match(/^\/api\/cards\/(\d+)\/toggle$/);
     if (cardMatch && method === 'POST') {
       const state = await serialize(async () => {
@@ -288,6 +308,11 @@ const server = createServer(async (request, response) => {
       const input = await readBody(request);
       const state = await serialize(async () => {
         const current = await readState();
+        if (typeof input.name === 'string') {
+          const name = input.name.trim().slice(0, 40);
+          if (!name) fail('Имя не может быть пустым');
+          current.profile.name = name;
+        }
         if (typeof input.theme === 'string' && ['dark', 'light'].includes(input.theme)) current.profile.theme = input.theme;
         if (typeof input.notificationsEnabled === 'boolean') current.profile.notificationsEnabled = input.notificationsEnabled;
         audit(current, 'Изменены настройки профиля', 'Обновлены настройки демо-профиля');
