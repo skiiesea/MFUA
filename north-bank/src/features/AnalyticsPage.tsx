@@ -1,5 +1,6 @@
 import type { Transaction } from '../types';
 import { PanelHead, TxRow } from '../components/ui';
+import { money } from '../format';
 
 export function AnalyticsPage({ income, expenses, categories, transactions, show }: { income: number; expenses: number; categories: [string, number][]; transactions: Transaction[]; show: boolean }) {
   const max = Math.max(1, ...categories.map(item => item[1]));
