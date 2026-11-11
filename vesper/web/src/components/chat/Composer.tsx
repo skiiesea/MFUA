@@ -7,6 +7,7 @@ import { fire } from '../../lib/socket';
 import { toast } from '../../store/ui';
 import type { AttachmentDto, Chat, Message } from '../../types';
 import { EmojiPicker } from '../EmojiPicker';
+import { AppleEmojiText } from '../AppleEmoji';
 import { IconButton } from '../ui';
 
 const ACCEPT = '.jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.csv,.zip,.docx,.xlsx,.pptx,.mp3,.mp4';
@@ -120,7 +121,7 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
           {editing ? <Pencil className="h-4 w-4 shrink-0 text-accent" /> : <Reply className="h-4 w-4 shrink-0 text-accent" />}
           <div className="min-w-0 flex-1 text-sm">
             <p className="font-bold text-accent">{editing ? 'Редактирование' : replyTo!.sender.displayName}</p>
-            <p className="truncate text-muted">{(editing ?? replyTo)!.text || 'Вложение'}</p>
+            <p className="truncate text-muted"><AppleEmojiText text={(editing ?? replyTo)!.text || 'Вложение'} /></p>
           </div>
           <IconButton label="Отменить" onClick={() => { onCancel(); if (editing) setText(''); }} className="h-8 w-8"><X className="h-4 w-4" /></IconButton>
         </div>
