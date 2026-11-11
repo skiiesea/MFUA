@@ -9,7 +9,7 @@ import { chatTitle, useChats } from '../../store/chat';
 import { toast } from '../../store/ui';
 import type { AttachmentDto, Chat, Message } from '../../types';
 import { Avatar } from '../Avatar';
-import { AppleEmoji } from '../AppleEmoji';
+import { AppleEmoji, AppleEmojiText } from '../AppleEmoji';
 import { ReportModal } from '../ReportModal';
 import { Button, EmptyState, FloatingMenu, IconButton, MenuItem, Modal, Skeleton } from '../ui';
 import { Composer } from './Composer';
@@ -273,7 +273,7 @@ export function ChatView({ chatId }: { chatId: string }) {
               {results.length === 0 ? <p className="p-4 text-center text-sm text-muted">Ничего не найдено</p> : results.map((r) => (
                 <button key={r.id} onClick={() => { setSearchOpen(false); setQuery(''); void jumpTo(r.id); }} className="flex w-full items-start gap-3 px-3 py-2.5 text-left transition hover:bg-line/10">
                   <Avatar name={r.sender.displayName} src={r.sender.avatarUrl} seed={r.senderId} size={30} />
-                  <span className="min-w-0 flex-1 text-sm"><span className="flex justify-between gap-2"><b className="truncate">{r.sender.displayName}</b><span className="shrink-0 text-xs text-muted">{dayLabel(r.createdAt)}</span></span><span className="line-clamp-2 break-words text-muted">{r.text}</span></span>
+                  <span className="min-w-0 flex-1 text-sm"><span className="flex justify-between gap-2"><b className="truncate">{r.sender.displayName}</b><span className="shrink-0 text-xs text-muted">{dayLabel(r.createdAt)}</span></span><span className="line-clamp-2 break-words text-muted"><AppleEmojiText text={r.text} /></span></span>
                 </button>
               ))}
             </div>
@@ -284,7 +284,7 @@ export function ChatView({ chatId }: { chatId: string }) {
       {curPin && (
         <button onClick={() => { void jumpTo(curPin.id); setPinIdx((i) => i + 1); }} className="flex shrink-0 items-center gap-3 border-b border-line/10 bg-surface/60 px-4 py-2 text-left transition hover:bg-line/5">
           <Pin className="h-4 w-4 shrink-0 text-accent" />
-          <span className="min-w-0 flex-1 text-sm"><span className="block text-xs font-bold text-accent">Закреплённое{pinned.length > 1 ? ` ${(pinIdx % pinned.length) + 1} из ${pinned.length}` : ''}</span><span className="block truncate text-muted">{curPin.text || 'Вложение'}</span></span>
+          <span className="min-w-0 flex-1 text-sm"><span className="block text-xs font-bold text-accent">Закреплённое{pinned.length > 1 ? ` ${(pinIdx % pinned.length) + 1} из ${pinned.length}` : ''}</span><span className="block truncate text-muted">{curPin.text ? <AppleEmojiText text={curPin.text} /> : 'Вложение'}</span></span>
         </button>
       )}
 
