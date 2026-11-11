@@ -26,8 +26,21 @@ export default function App() {
   const [tx, setTx] = useState<Tx[]>(() => {
     try { const saved = localStorage.getItem('north-demo-transactions'); return saved ? JSON.parse(saved) as Tx[] : initialTx; } catch { return initialTx; }
   });
-  useEffect(() => { localStorage.setItem('north-demo-accounts', JSON.stringify(accounts)); }, [accounts]);
-  useEffect(() => { localStorage.setItem('north-demo-transactions', JSON.stringify(tx)); }, [tx]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/state')
+      .then(async response => {
+        if (!response.ok) throw new Error('Не удалось загрузить демо-данные');
+        return response.json() as Promise<{ accounts: Account[]; transactions: Tx[] }>;
+      })
+      .then(state => {
+        if (cancelled) return;
+        setAccounts(state.accounts);
+        setTx(state.transactions);
+      })
+      .catch(() => { if (!cancelled) toast('Сервер демо-банка недоступен. Перезапусти npm run dev.'); });
+    return () => { cancelled = true; };
+  }, []);
   const [showBalance, setShowBalance] = useState(true);
   const [modal, setModal] = useState<'transfer' | 'payment' | 'topup' | null>(null);
   const [amount, setAmount] = useState('');
@@ -40,22 +53,38 @@ export default function App() {
   const filtered = useMemo(() => tx.filter(t => (t.title + t.detail + t.category).toLowerCase().includes(search.toLowerCase())), [tx, search]);
   const active = accounts.find(a => a.id === activeAccount) ?? accounts[0];
   const toast = (s: string) => { setNotice(s); window.setTimeout(() => setNotice(''), 2600); };
-  const addTx = (entry: Omit<Tx, 'id' | 'date'>) => setTx(old => [{ ...entry, id: Date.now(), date: 'Только что' }, ...old]);
-  const submitAction = () => {
+  const submitAction = async () => {
     const n = Number(amount.replace(',', '.'));
     if (!Number.isFinite(n) || n <= 0 || n > 1000000) { toast('Укажи корректную сумму до 1 000 000 ₽'); return; }
-    if (modal === 'transfer' || modal === 'payment') {
-      if (n > active.balance) { toast('Недостаточно средств на демо-счёте'); return; }
-      if (!recipient.trim()) { toast('Заполни название получателя'); return; }
-      setAccounts(old => old.map(a => a.id === active.id ? { ...a, balance: a.balance - n } : a));
-      addTx({ title: modal === 'transfer' ? 'Демо-перевод' : recipient, detail: modal === 'transfer' ? 'Тестовая операция · ' + recipient : 'Демо-платёж', amount: -n, category: modal === 'transfer' ? 'Переводы' : 'Платежи', kind: 'expense' });
-      toast('Демо-операция выполнена. Реальные деньги не переводились.');
-    } else {
-      setAccounts(old => old.map(a => a.id === active.id ? { ...a, balance: a.balance + n } : a));
-      addTx({ title: 'Тестовое пополнение', detail: 'Виртуальные средства', amount: n, category: 'Пополнение', kind: 'income' });
-      toast('Демо-баланс пополнен виртуальными средствами.');
+    if ((modal === 'transfer' || modal === 'payment') && !recipient.trim()) {
+      toast('Заполни название получателя'); return;
     }
-    setModal(null); setAmount(''); setRecipient('');
+    try {
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId: active.id, type: modal, amount: n, recipient: recipient.trim() }),
+      });
+      const result = await response.json() as { accounts?: Account[]; transactions?: Tx[]; error?: string };
+      if (!response.ok) throw new Error(result.error || 'Не удалось выполнить демо-операцию');
+      if (result.accounts) setAccounts(result.accounts);
+      if (result.transactions) setTx(result.transactions);
+      toast('Демо-операция выполнена. Реальные деньги не перемещались.');
+      setModal(null); setAmount(''); setRecipient('');
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Ошибка сервера демо-банка');
+    }
+  };
+  const resetDemo = async () => {
+    try {
+      const response = await fetch('/api/reset', { method: 'POST' });
+      if (!response.ok) throw new Error('Не удалось сбросить демо-данные');
+      const state = await response.json() as { accounts: Account[]; transactions: Tx[] };
+      setAccounts(state.accounts); setTx(state.transactions); setActiveAccount(1);
+      toast('Демо-данные восстановлены на сервере');
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Ошибка сброса демо-данных');
+    }
   };
   const changePage = (p: Page) => { setPage(p); setSearch(''); };
   const title = ({ home: 'Главная', accounts: 'Мои счета', cards: 'Карты', payments: 'Платежи и переводы', history: 'История операций', profile: 'Профиль' } as Record<Page, string>)[page];
@@ -89,7 +118,7 @@ export default function App() {
         {page === 'cards' && <section className="panel page-panel"><div className="panel-head"><div><h3>Ваши карты</h3><p>Только визуальные макеты — не платёжные инструменты</p></div><span className="demo-pill"><i/> ВИРТУАЛЬНЫЕ</span></div><div className="cards-grid"><div className="bank-card purple-card"><div className="bank-card-head"><b>NORTH</b><span>DEBIT · DEMO</span></div><div className="chip"/><div className="card-number">•••• &nbsp; •••• &nbsp; •••• &nbsp; 4821</div><div className="bank-card-bottom"><div><small>ВЛАДЕЛЕЦ</small><b>ALEXANDER</b></div><div><small>ДЕЙСТВУЕТ ДО</small><b>MM/YY</b></div><b className="visa">VISA*</b></div></div><div className="bank-card blue-card"><div className="bank-card-head"><b>NORTH</b><span>SAVINGS · DEMO</span></div><div className="chip"/><div className="card-number">•••• &nbsp; •••• &nbsp; •••• &nbsp; 1904</div><div className="bank-card-bottom"><div><small>ВЛАДЕЛЕЦ</small><b>ALEXANDER</b></div><div><small>ТИП</small><b>СБЕРЕГАТЕЛЬНЫЙ</b></div><b className="visa">N</b></div></div></div><div className="inline-info"><ShieldCheck size={17}/> Здесь намеренно нет CVV, полного номера карты или реальных платёжных реквизитов.</div></section>}
         {page === 'payments' && <section className="panel page-panel"><div className="panel-head"><div><h3>Платежи и переводы</h3><p>Выбери действие для тестовой операции</p></div></div><div className="payment-options"><button onClick={() => setModal('transfer')}><span className="quick-icon purple"><ArrowUpRight/></span><b>Перевод</b><small>Списать виртуальные средства с выбранного счёта</small><ChevronRight/></button><button onClick={() => setModal('payment')}><span className="quick-icon blue"><BriefcaseBusiness/></span><b>Оплата услуги</b><small>Создать тестовую запись о платеже</small><ChevronRight/></button><button onClick={() => setModal('topup')}><span className="quick-icon green"><Plus/></span><b>Пополнение</b><small>Добавить виртуальные средства</small><ChevronRight/></button></div><div className="inline-info"><ShieldCheck size={17}/> Все действия локальные. Получатели не проверяются, реальные переводы невозможны.</div></section>}
         {page === 'history' && <section className="panel page-panel"><div className="panel-head"><div><h3>Все операции</h3><p>{filtered.length} операций в демо-истории</p></div><div className="search-box"><Search size={17}/><input placeholder="Поиск по операциям" value={search} onChange={e => setSearch(e.target.value)}/><SlidersHorizontal size={16}/></div></div><div className="history-table"><div className="table-labels"><span>ОПЕРАЦИЯ</span><span>ДАТА</span><span>СУММА</span></div>{filtered.map(t => <TxRow key={t.id} tx={t} show={showBalance}/>) }{!filtered.length && <div className="empty">Ничего не найдено. Попробуй изменить запрос.</div>}</div></section>}
-        {page === 'profile' && <section className="panel page-panel profile-page"><div className="profile-large"><div className="avatar large">А</div><div><h2>Александр</h2><p>Демо-клиент · ID NB-000042</p></div></div><div className="profile-settings"><div><UserRound/><span><b>Личные данные</b><small>Демонстрационный профиль без персональных сведений</small></span><ChevronRight/></div><div><Bell/><span><b>Уведомления</b><small>Настройки уведомлений прототипа</small></span><ChevronRight/></div><div><Settings/><span><b>Внешний вид</b><small>Переключить тему интерфейса</small></span><button className="toggle" onClick={() => setDark(v => !v)}>{dark ? 'Тёмная' : 'Светлая'}</button></div><div><ShieldCheck/><span><b>Безопасность</b><small>Не вводите реальные пароли и реквизиты</small></span><ChevronRight/></div><div><CircleHelp/><span><b>О приложении</b><small>North Bank Demo · версия 0.1</small></span><ChevronRight/></div></div><button className="reset-btn" onClick={() => {setAccounts(initialAccounts);setTx(initialTx);setActiveAccount(1);toast('Демо-данные восстановлены');}}><LogOut size={16}/> Сбросить демо-данные</button></section>}
+        {page === 'profile' && <section className="panel page-panel profile-page"><div className="profile-large"><div className="avatar large">А</div><div><h2>Александр</h2><p>Демо-клиент · ID NB-000042</p></div></div><div className="profile-settings"><div><UserRound/><span><b>Личные данные</b><small>Демонстрационный профиль без персональных сведений</small></span><ChevronRight/></div><div><Bell/><span><b>Уведомления</b><small>Настройки уведомлений прототипа</small></span><ChevronRight/></div><div><Settings/><span><b>Внешний вид</b><small>Переключить тему интерфейса</small></span><button className="toggle" onClick={() => setDark(v => !v)}>{dark ? 'Тёмная' : 'Светлая'}</button></div><div><ShieldCheck/><span><b>Безопасность</b><small>Не вводите реальные пароли и реквизиты</small></span><ChevronRight/></div><div><CircleHelp/><span><b>О приложении</b><small>North Bank Demo · версия 0.1</small></span><ChevronRight/></div></div><button className="reset-btn" onClick={resetDemo}><LogOut size={16}/> Сбросить демо-данные</button></section>}
       </div>
       <footer className="footer">© 2026 NORTH BANK <span>Демонстрационный интерфейс · Не является финансовой организацией</span></footer>
     </main>
