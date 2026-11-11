@@ -61,6 +61,7 @@ export default function App() {
   const [supportSubject, setSupportSubject] = useState('');
   const [supportMessage, setSupportMessage] = useState('');
   const [admin, setAdmin] = useState<AdminSummary | null>(null);
+  const [profileName, setProfileName] = useState('Александр');
 
   const toast = (message: string) => {
     setNotice(message);
@@ -68,6 +69,7 @@ export default function App() {
   };
   const applyState = (next: BankState) => {
     setData(next);
+    setProfileName(next.profile.name);
     setAccountId(current => next.accounts.some(a => a.id === current) ? current : (next.accounts[0]?.id ?? 1));
     setTargetAccountId(current => next.accounts.some(a => a.id === current && a.id !== accountId) ? current : (next.accounts.find(a => a.id !== accountId)?.id ?? 1));
   };
@@ -198,13 +200,13 @@ export default function App() {
         {loading ? <div className="panel loading-panel"><RefreshCw className="spin"/> Подключаем локальный демо-сервер…</div> : <>
           {page === 'home' && <Dashboard data={data} total={total} income={income} expenses={expenses} show={showBalance} onPage={changePage} onOperation={openOperation}/>}
           {page === 'accounts' && <AccountsPage data={data} total={total} show={showBalance} busy={busy} name={newAccountName} setName={setNewAccountName} type={newAccountType} setType={setNewAccountType} onCreate={submitNewAccount} onRename={(id, name) => runAction('/api/accounts/' + id, { name }, 'PATCH', 'Название счёта изменено')} onHistory={() => changePage('history')}/>}
-          {page === 'cards' && <CardsPage cards={data.cards} accounts={data.accounts} busy={busy} onToggle={id => runAction('/api/cards/' + id + '/toggle', undefined, 'POST', 'Статус демо-карты изменён')}/>}
+          {page === 'cards' && <CardsPage cards={data.cards} accounts={data.accounts} busy={busy} onToggle={id => runAction('/api/cards/' + id + '/toggle', undefined, 'POST', 'Статус демо-карты изменён')} onCreate={(name, selectedAccount) => runAction('/api/cards', { name, accountId: selectedAccount }, 'POST', 'Макет демо-карты создан')}/>}
           {page === 'payments' && <PaymentsPage accounts={data.accounts} onOperation={openOperation}/>}
           {page === 'history' && <HistoryPage items={filtered} search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} show={showBalance}/>}
           {page === 'analytics' && <AnalyticsPage income={income} expenses={expenses} categories={categories} transactions={data.transactions} show={showBalance}/>}
           {page === 'savings' && <SavingsPage goals={data.goals} accounts={data.accounts} accountId={accountId} setAccountId={setAccountId} contribution={goalContribution} setContribution={setGoalContribution} title={newGoalTitle} setTitle={setNewGoalTitle} target={newGoalTarget} setTarget={setNewGoalTarget} deadline={newGoalDate} setDeadline={setNewGoalDate} onCreate={submitNewGoal} onContribute={contribute} busy={busy}/>}
           {page === 'notifications' && <NotificationsPage items={data.notifications} enabled={data.profile.notificationsEnabled} onRead={id => runAction('/api/notifications/' + id + '/read', undefined, 'POST')}/>}
-          {page === 'profile' && <ProfilePage data={data} onTheme={toggleTheme} onNotifications={value => runAction('/api/profile', { notificationsEnabled: value }, 'PATCH', 'Настройки уведомлений сохранены')} onReset={resetDemo} busy={busy}/>}
+          {page === 'profile' && <ProfilePage data={data} name={profileName} setName={setProfileName} onSaveName={() => runAction('/api/profile', { name: profileName }, 'PATCH', 'Имя демо-профиля обновлено')} onTheme={toggleTheme} onNotifications={value => runAction('/api/profile', { notificationsEnabled: value }, 'PATCH', 'Настройки уведомлений сохранены')} onReset={resetDemo} busy={busy}/>}
           {page === 'support' && <SupportPage tickets={data.supportTickets} subject={supportSubject} setSubject={setSupportSubject} message={supportMessage} setMessage={setSupportMessage} onSubmit={async (event) => { event.preventDefault(); const ok = await runAction('/api/support', { subject: supportSubject, message: supportMessage }, 'POST', 'Демо-обращение зарегистрировано'); if (ok) { setSupportSubject(''); setSupportMessage(''); } }}/>}
           {page === 'admin' && <AdminPage data={data} admin={admin} onRefresh={() => getAdminSummary().then(setAdmin).catch(error => toast(error.message))}/>}
         </>}
