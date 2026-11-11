@@ -1,53 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=3 format=3]
 
-[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="1_player"]
-
-[sub_resource type="Environment" id="Environment_main"]
-background_mode = 1
-background_color = Color(0.035, 0.055, 0.07, 1)
-ambient_light_source = 3
-ambient_light_color = Color(0.48, 0.55, 0.62, 1)
-ambient_light_energy = 0.65
-
-[sub_resource type="BoxMesh" id="FloorMesh"]
-size = Vector3(24, 0.5, 24)
-
-[sub_resource type="BoxShape3D" id="FloorShape"]
-size = Vector3(24, 0.5, 24)
-
-[sub_resource type="BoxMesh" id="BlockMesh"]
-size = Vector3(1.5, 1.5, 1.5)
-
-[sub_resource type="BoxShape3D" id="BlockShape"]
-size = Vector3(1.5, 1.5, 1.5)
+[ext_resource type="Script" path="res://scripts/world_builder.gd" id="1_world"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
 
 [node name="Main" type="Node3D"]
+script = ExtResource("1_world")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_main")
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-rotation = Vector3(-0.8, -0.55, 0)
-light_energy = 1.15
-shadow_enabled = true
-
-[node name="Floor" type="StaticBody3D" parent="."]
-position = Vector3(0, -0.25, 0)
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
-mesh = SubResource("FloorMesh")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
-shape = SubResource("FloorShape")
-
-[node name="TestBlock" type="StaticBody3D" parent="."]
-position = Vector3(0, 0.75, -5)
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="TestBlock"]
-mesh = SubResource("BlockMesh")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TestBlock"]
-shape = SubResource("BlockShape")
-
-[node name="Player" parent="." instance=ExtResource("1_player")]
-position = Vector3(0, 1.1, 4)
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector3(0, 0.03, 8)
