@@ -56,7 +56,7 @@ adminRouter.post('/users/:id/ban', ah(async (req, res) => {
   const target = await prisma.user.findUnique({ where: { id: req.params.id } });
   if (!target) throw notFound('Пользователь не найден');
   if (target.id === req.auth!.user.id) throw badRequest('Нельзя заблокировать самого себя');
-  if (target.role === 'ADMIN') throw forbidden('Нельзя заблокировать администратора');
+  if (target.role !== 'USER') throw forbidden('Нельзя заблокировать администратора или владельца системы');
   await prisma.user.update({ where: { id: target.id }, data: { bannedAt: new Date(), banReason: reason } });
   await revokeAllSessions(target.id);
   logs.security.warn({ event: 'admin_ban', adminId: req.auth!.user.id, targetId: target.id, reason, ip: ipOf(req) }, 'User banned by admin');
