@@ -37,9 +37,10 @@ async function main() {
   if (existing) {
     const yes = (await ask(`  Пользователь @${username} уже есть. Назначить администратором? (y/N): `)).toLowerCase();
     if (yes !== 'y') return console.log('  Отменено.');
-    await prisma.user.update({ where: { id: existing.id }, data: { role: 'ADMIN' } });
+    const role = username === 'root_admin' ? 'ROOT_ADMIN' : 'ADMIN';
+    await prisma.user.update({ where: { id: existing.id }, data: { role } });
     logs.security.warn({ event: 'admin_promoted', userId: existing.id, via: 'cli' }, 'User promoted to admin via CLI');
-    return console.log(`  Готово: @${username} теперь администратор.`);
+    return console.log(`  Готово: @${username} теперь ${role === 'ROOT_ADMIN' ? 'root_admin' : 'администратор'}.`);
   }
   const displayName = displayNameSchema.parse(await ask('  Отображаемое имя: '));
   const email = emailSchema.parse(await ask('  Email: '));
@@ -48,11 +49,12 @@ async function main() {
   if (password !== confirm) throw new Error('Пароли не совпадают');
   const problems = passwordProblems(password, { username, email });
   if (problems.length) throw new Error(problems.join('; '));
+  const role = username === 'root_admin' ? 'ROOT_ADMIN' : 'ADMIN';
   const user = await prisma.user.create({
-    data: { username, displayName, email, passwordHash: await hashPassword(password), role: 'ADMIN', emailVerifiedAt: new Date() },
+    data: { username, displayName, email, passwordHash: await hashPassword(password), role, emailVerifiedAt: new Date() },
   });
   logs.security.warn({ event: 'admin_created', userId: user.id, via: 'cli' }, 'Administrator account created via CLI');
-  console.log(`\n  Готово: администратор @${username} создан. Войдите на сайте и откройте раздел «Админ».\n`);
+  console.log(`\n  Готово: ${role === 'ROOT_ADMIN' ? 'владелец системы' : 'администратор'} @${username} создан. Войдите на сайте и откройте раздел «Админ».\n`);
 }
 
 main()
