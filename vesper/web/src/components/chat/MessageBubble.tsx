@@ -4,6 +4,7 @@ import { memo, type ReactNode } from 'react';
 import { fmtSize, fmtTime } from '../../lib/format';
 import type { Chat, Message } from '../../types';
 import { Avatar } from '../Avatar';
+import { AppleEmoji, AppleEmojiText } from '../AppleEmoji';
 
 const URL_RE = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]"'])/g;
 const MENTION_RE = /(@[a-z0-9_]{3,24})/gi;
@@ -16,7 +17,7 @@ function Rich({ text, mine }: { text: string; mine: boolean }) {
         i % 2 === 1 ? (
           <a key={i} href={p} target="_blank" rel="noopener noreferrer nofollow" className="break-all underline underline-offset-2 hover:opacity-80">{p}</a>
         ) : (
-          p.split(MENTION_RE).map((q, j) => (j % 2 === 1 ? <span key={`${i}-${j}`} className={clsx('font-semibold', mine ? 'text-white' : 'text-accent')}>{q}</span> : q))
+          p.split(MENTION_RE).map((q, j) => (j % 2 === 1 ? <span key={`${i}-${j}`} className={clsx('font-semibold', mine ? 'text-white' : 'text-accent')}>{q}</span> : <AppleEmojiText text={q} />))
         ),
       )}
     </>
@@ -116,7 +117,7 @@ function BubbleImpl({ m, chat, mine, meId, first, last, status, highlight, onMen
                 const meReacted = r.userIds.includes(meId);
                 return (
                   <button key={r.emoji} onClick={() => onReact(m, r.emoji)} className={clsx('inline-flex h-7 items-center gap-1 rounded-full border px-2 text-xs font-semibold transition active:scale-90', meReacted ? 'border-accent/60 bg-accent/20 text-fg' : 'border-line/10 bg-raised text-muted hover:border-line/25')}>
-                    <span className="emoji-font text-sm">{r.emoji}</span>{r.userIds.length}
+                    <AppleEmoji value={r.emoji} size={17} />{r.userIds.length}
                   </button>
                 );
               })}
