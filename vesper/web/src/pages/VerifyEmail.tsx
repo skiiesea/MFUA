@@ -36,11 +36,11 @@ export function VerifyEmailPage() {
   const verifyCode = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!/^\\S+@\\S+\\.\\S+$/.test(email)) {
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
       setError('Введите корректный email.');
       return;
     }
-    if (!/^\\d{6}$/.test(code)) {
+    if (!/^\d{6}$/.test(code)) {
       setError('Введите шестизначный код.');
       return;
     }
@@ -96,7 +96,7 @@ export function VerifyEmailPage() {
         {!token && state !== 'ok' && (
           <form onSubmit={verifyCode} className="w-full space-y-4 text-left">
             <Input label="Email аккаунта" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" autoComplete="email" />
-            <Input label="Шестизначный код" value={code} onChange={(e) => setCode(e.target.value.replace(/\\D/g, '').slice(0, 6))} placeholder="000000" maxLength={6} autoComplete="one-time-code" inputMode="numeric" />
+            <Input label="Шестизначный код" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="000000" maxLength={6} autoComplete="one-time-code" inputMode="numeric" />
             {error && <p className="text-sm text-danger" role="alert">{error}</p>}
             {notice && <p className="text-sm text-muted" role="status">{notice}</p>}
             <Button type="submit" size="lg" className="w-full" loading={busy} disabled={busy || code.length !== 6 || !email}>Подтвердить email</Button>
