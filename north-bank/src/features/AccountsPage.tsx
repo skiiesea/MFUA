@@ -1,9 +1,9 @@
-import { FormEvent, useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { ChevronRight, Plus, ShieldCheck, Wallet } from 'lucide-react';
 import type { BankState } from '../types';
 import { PanelHead } from '../components/ui';
 
-function AccountsPage({ data, total, show, busy, name, setName, type, setType, onCreate, onRename, onHistory }: { data: BankState; total: number; show: boolean; busy: boolean; name: string; setName: (value: string) => void; type: 'current' | 'savings'; setType: (value: 'current' | 'savings') => void; onCreate: (event: FormEvent) => void; onRename: (id: number, name: string) => void; onHistory: () => void }) {
+export function AccountsPage({ data, total, show, busy, name, setName, type, setType, onCreate, onRename, onHistory }: { data: BankState; total: number; show: boolean; busy: boolean; name: string; setName: (value: string) => void; type: 'current' | 'savings'; setType: (value: 'current' | 'savings') => void; onCreate: (event: FormEvent) => void; onRename: (id: number, name: string) => void; onHistory: () => void }) {
   const [renaming, setRenaming] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState('');
   return <div className="module-grid">
