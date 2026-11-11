@@ -34,7 +34,7 @@ export interface Self {
   displayName: string;
   email: string;
   emailVerified: boolean;
-  role: 'USER' | 'ADMIN';
+  role: 'USER' | 'ADMIN' | 'ROOT_ADMIN';
   avatarUrl: string | null;
   coverUrl: string | null;
   statusText: string;
