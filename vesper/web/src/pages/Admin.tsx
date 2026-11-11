@@ -142,14 +142,14 @@ function UsersTab() {
 
 type RootProfile = {
   id: string; publicId: number; username: string; displayName: string; email: string; emailVerified: boolean;
-  role: 'USER' | 'ADMIN'; statusText: string; about: string; accentColor: string | null; profileBg: string | null;
+  role: 'USER' | 'ADMIN' | 'ROOT_ADMIN'; statusText: string; about: string; accentColor: string | null; profileBg: string | null;
   activity: 'AUTO' | 'DND' | 'OFFLINE' | 'WORK' | 'FREE';
   privacyMessages: 'EVERYONE' | 'FRIENDS' | 'NOBODY'; privacyRequests: 'EVERYONE' | 'NOBODY';
   privacyOnline: 'EVERYONE' | 'FRIENDS' | 'NOBODY'; privacyLastSeen: 'EVERYONE' | 'FRIENDS' | 'NOBODY';
   privacyProfile: 'EVERYONE' | 'FRIENDS' | 'NOBODY'; banned: boolean; banReason: string | null;
   createdAt: string; lastSeenAt: string;
 };
-type RootChat = { id: string; type: string; title: string | null; lastMessageAt: string; members: { id: string; username: string; displayName: string; publicId: number }[]; lastMessage: { text: string; createdAt: string } | null };
+type RootChat = { id: string; type: string; title: string | null; lastMessageAt: string; members: { id: string; username: string; displayName: string; publicId: number }[] };
 type RootMessage = { id: string; text: string; createdAt: string; deletedAt: string | null; sender: { id: string; username: string; displayName: string }; attachments: { originalName: string }[] };
 
 function RootControlTab() {
@@ -188,8 +188,9 @@ function RootControlTab() {
     if (!selected || reason.trim().length < 8) return;
     setBusy(true);
     try {
-      const { id, createdAt: _created, lastSeenAt: _seen, ...fields } = selected;
-      const r = await api.patch<{ user: RootProfile }>('/admin/root/users/' + id, { ...fields, reason });
+      const { id, createdAt: _created, lastSeenAt: _seen, role, ...fields } = selected;
+      const payload = role === 'ROOT_ADMIN' ? fields : { ...fields, role };
+      const r = await api.patch<{ user: RootProfile }>('/admin/root/users/' + id, { ...payload, reason });
       setSelected((old) => old ? { ...old, ...r.user } : old);
       toast.success('Аккаунт обновлён'); setReason(''); void search();
     } catch (e) { toast.error(errMsg(e)); }
@@ -210,7 +211,7 @@ function RootControlTab() {
     if (messageReason.trim().length < 8) return;
     setBusy(true);
     try {
-      const r = await api.get<{ messages: RootMessage[] }>('/admin/root/chats/' + chat.id + '/messages?reason=' + encodeURIComponent(messageReason));
+      const r = await api.get<{ messages: RootMessage[] }>('/admin/root/chats/' + chat.id + '/messages?targetId=' + encodeURIComponent(selected?.id ?? '') + '&reason=' + encodeURIComponent(messageReason));
       setActiveChat(chat); setMessages(r.messages);
     } catch (e) { toast.error(errMsg(e)); }
     finally { setBusy(false); }
@@ -241,7 +242,7 @@ function RootControlTab() {
             <label className="text-xs text-muted">Статус<Input value={selected.statusText} onChange={(e) => updateField('statusText', e.target.value)} /></label>
             <label className="text-xs text-muted">Цвет акцента<Input value={selected.accentColor ?? ''} onChange={(e) => updateField('accentColor', e.target.value || null)} placeholder="#7c5cff" /></label>
             <label className="text-xs text-muted">Фон профиля<Input value={selected.profileBg ?? ''} onChange={(e) => updateField('profileBg', e.target.value || null)} /></label>
-            <label className="text-xs text-muted">Роль<Select value={selected.role} onChange={(e) => updateField('role', e.target.value as RootProfile['role'])}><option value="USER">USER</option><option value="ADMIN">ADMIN</option></Select></label>
+            {selected.role === 'ROOT_ADMIN' ? <label className="text-xs text-muted">Роль<Input value="ROOT_ADMIN" disabled /></label> : <label className="text-xs text-muted">Роль<Select value={selected.role} onChange={(e) => updateField('role', e.target.value as RootProfile['role'])}><option value="USER">USER</option><option value="ADMIN">ADMIN</option></Select></label>}
             <label className="text-xs text-muted">Активность<Select value={selected.activity} onChange={(e) => updateField('activity', e.target.value as RootProfile['activity'])}>{['AUTO','DND','OFFLINE','WORK','FREE'].map((v) => <option key={v} value={v}>{v}</option>)}</Select></label>
             <label className="text-xs text-muted">Кто может писать<Select value={selected.privacyMessages} onChange={(e) => updateField('privacyMessages', e.target.value as RootProfile['privacyMessages'])}>{['EVERYONE','FRIENDS','NOBODY'].map((v) => <option key={v} value={v}>{v}</option>)}</Select></label>
             <label className="text-xs text-muted">Заявки в друзья<Select value={selected.privacyRequests} onChange={(e) => updateField('privacyRequests', e.target.value as RootProfile['privacyRequests'])}><option value="EVERYONE">EVERYONE</option><option value="NOBODY">NOBODY</option></Select></label>
@@ -267,7 +268,6 @@ function RootControlTab() {
             <div className="max-h-[50dvh] space-y-2 overflow-auto">
               {chats.map((chat) => <button key={chat.id} onClick={() => void loadMessages(chat)} className={clsx('w-full rounded-xl border p-3 text-left', activeChat?.id === chat.id ? 'border-accent bg-accent/10' : 'border-line/20 hover:bg-raised')}>
                 <b className="block text-sm">{chat.title || chat.members.map((m) => m.displayName).join(', ')}</b><span className="text-xs text-muted">{chat.type} · {chat.members.map((m) => '@' + m.username).join(', ')}</span>
-                {chat.lastMessage && <span className="mt-1 block truncate text-xs text-muted">{chat.lastMessage.text}</span>}
               </button>)}
             </div>
             <div className="max-h-[60dvh] space-y-3 overflow-auto rounded-xl bg-raised p-3">
