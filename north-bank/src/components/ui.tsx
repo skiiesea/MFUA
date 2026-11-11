@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ChevronRight, Wallet } from 'lucide-react';
 import type { Account, Transaction } from '../types';
+import { money } from '../format';
 
 export function QuickAction({ icon, label, detail, color, onClick }: { icon: ReactNode; label: string; detail: string; color: string; onClick: () => void }) {
   return <button onClick={onClick}><span className={'quick-icon ' + color}>{icon}</span><b>{label}</b><small>{detail}</small></button>;
