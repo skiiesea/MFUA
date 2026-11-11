@@ -6,6 +6,7 @@ import { listTime } from '../../lib/format';
 import { useAuth } from '../../store/auth';
 import { chatTitle, useChats } from '../../store/chat';
 import { Avatar } from '../Avatar';
+import { AppleEmojiText } from '../AppleEmoji';
 import { Badge, EmptyState, IconButton, Skeleton } from '../ui';
 import { NewChatModal } from './NewChatModal';
 
@@ -55,7 +56,7 @@ export function ChatList({ activeId }: { activeId?: string }) {
                         {last && <span className={clsx('shrink-0 text-xs', c.unread ? 'font-semibold text-accent' : 'text-muted')}>{listTime(last.createdAt)}</span>}
                       </div>
                       <div className="mt-0.5 flex items-center justify-between gap-2">
-                        <span className={clsx('truncate text-sm', t ? 'text-accent' : c.unread ? 'text-fg' : 'text-muted')}>{t ? 'печатает…' : preview}</span>
+                        <span className={clsx('truncate text-sm', t ? 'text-accent' : c.unread ? 'text-fg' : 'text-muted')}>{t ? 'печатает…' : last?.text ? <><span>{last.senderId === me.id ? 'Вы: ' : ''}</span><AppleEmojiText text={last.text} /></> : preview}</span>
                         <Badge n={c.unread} />
                       </div>
                     </div>
