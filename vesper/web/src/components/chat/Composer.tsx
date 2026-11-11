@@ -163,7 +163,7 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
             aria-hidden="true"
             className="no-scrollbar pointer-events-none absolute inset-0 z-0 overflow-y-auto whitespace-pre-wrap break-words px-4 py-3 pr-9 text-[15px] leading-snug"
           >
-            {text ? <AppleEmojiText text={text} /> : <span className="text-muted/70">Написать сообщение…</span>}
+            {text ? <AppleEmojiText text={text} size={15} /> : <span className="text-muted/70">Написать сообщение…</span>}
           </div>
           <textarea
             ref={ref}
