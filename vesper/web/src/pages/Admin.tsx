@@ -10,31 +10,35 @@ import { fmtDateTime, plural } from '../lib/format';
 import { useAuth } from '../store/auth';
 import { toast } from '../store/ui';
 
-type Tab = 'overview' | 'users' | 'reports' | 'logs';
+type Tab = 'overview' | 'users' | 'reports' | 'logs' | 'root';
 const TABS: { value: Tab; label: string }[] = [
-  { value: 'overview', label: 'Обзор' }, { value: 'users', label: 'Пользователи' }, { value: 'reports', label: 'Жалобы' }, { value: 'logs', label: 'Логи' },
+  { value: 'overview', label: 'Обзор' }, { value: 'users', label: 'Пользователи' }, { value: 'reports', label: 'Жалобы' }, { value: 'logs', label: 'Логи' }, { value: 'root', label: 'Root control' },
 ];
 
 export function AdminPage() {
   const user = useAuth((s) => s.user)!;
   const { tab } = useParams();
-  if (user.role !== 'ADMIN') {
+  if (user.role !== 'ADMIN' && user.role !== 'ROOT_ADMIN') {
     return <div className="flex h-full items-center justify-center"><EmptyState icon={<ShieldAlert />} title="Нет доступа" text="Раздел доступен только администраторам." action={<Link to="/"><Button variant="soft">На главную</Button></Link>} /></div>;
   }
-  if (!tab || !TABS.some((t) => t.value === tab)) return <Navigate to="/admin/overview" replace />;
+  const visibleTabs = user.role === 'ROOT_ADMIN' ? TABS : TABS.filter((t) => t.value !== 'root');
+  if (!tab || !visibleTabs.some((t) => t.value === tab)) return <Navigate to="/admin/overview" replace />;
   return <AdminInner tab={tab as Tab} />;
 }
 
 function AdminInner({ tab }: { tab: Tab }) {
   const navigate = useNavigate();
+  const isRoot = useAuth((s) => s.user?.role === 'ROOT_ADMIN');
+  const visibleTabs = isRoot ? TABS : TABS.filter((t) => t.value !== 'root');
   return (
     <Page wide>
       <PageHeader title="Администрирование" subtitle="Статистика, пользователи, жалобы и технические логи" />
-      <div className="mb-5 overflow-x-auto"><Tabs value={tab} onChange={(v) => navigate(`/admin/${v}`)} tabs={TABS} /></div>
+      <div className="mb-5 overflow-x-auto"><Tabs value={tab} onChange={(v) => navigate(`/admin/${v}`)} tabs={visibleTabs} /></div>
       {tab === 'overview' && <Overview />}
       {tab === 'users' && <UsersTab />}
       {tab === 'reports' && <ReportsTab />}
       {tab === 'logs' && <LogsTab />}
+      {tab === 'root' && isRoot && <RootControlTab />}
     </Page>
   );
 }
@@ -67,7 +71,7 @@ function Overview() {
   );
 }
 
-interface AdminUser { id: string; publicId: number; username: string; displayName: string; email: string; role: 'USER' | 'ADMIN'; avatarUrl: string | null; emailVerified: boolean; twoFactor: boolean; banned: boolean; banReason: string | null; createdAt: string; lastSeenAt: string }
+interface AdminUser { id: string; publicId: number; username: string; displayName: string; email: string; role: 'USER' | 'ADMIN' | 'ROOT_ADMIN'; avatarUrl: string | null; emailVerified: boolean; twoFactor: boolean; banned: boolean; banReason: string | null; createdAt: string; lastSeenAt: string }
 
 function BanModal({ user, onClose, onDone }: { user: { id: string; displayName: string }; onClose: () => void; onDone: () => void }) {
   const [reason, setReason] = useState('');
@@ -118,19 +122,164 @@ function UsersTab() {
             <Avatar name={u.displayName} src={u.avatarUrl} seed={u.id} size={44} />
             <div className="min-w-0 flex-1 basis-48">
               <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">{u.displayName}<span className="font-normal text-muted">@{u.username} #{u.publicId}</span>
-                {u.role === 'ADMIN' && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] text-accent">админ</span>}
+                {u.role !== 'USER' && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] text-accent">админ</span>}
                 {u.banned && <span className="rounded-full bg-danger/15 px-2 py-0.5 text-[11px] text-danger">заблокирован</span>}
                 {u.twoFactor && <ShieldCheck className="h-4 w-4 text-ok" aria-label="2FA включена" />}
                 {!u.emailVerified && <span className="rounded-full bg-[#f5a524]/15 px-2 py-0.5 text-[11px] text-[#f5a524]">email не подтверждён</span>}</p>
               <p className="truncate text-xs text-muted">{u.email}, регистрация {fmtDateTime(u.createdAt)}, был(а) {fmtDateTime(u.lastSeenAt)}</p>
               {u.banned && u.banReason && <p className="mt-1 text-xs text-danger">Причина: {u.banReason}</p>}
             </div>
-            {u.role !== 'ADMIN' && (u.banned ? <Button size="sm" variant="soft" icon={<CheckCircle2 className="h-4 w-4" />} loading={busy === u.id} onClick={() => void unban(u)}>Разблокировать</Button> : <Button size="sm" variant="danger" icon={<Ban className="h-4 w-4" />} onClick={() => setBan(u)}>Заблокировать</Button>)}
+            {u.role === 'USER' && (u.banned ? <Button size="sm" variant="soft" icon={<CheckCircle2 className="h-4 w-4" />} loading={busy === u.id} onClick={() => void unban(u)}>Разблокировать</Button> : <Button size="sm" variant="danger" icon={<Ban className="h-4 w-4" />} onClick={() => setBan(u)}>Заблокировать</Button>)}
           </div>
         ))}
       </div>
       {data && pages > 1 && <div className="mt-4 flex items-center justify-center gap-3"><Button size="sm" variant="soft" disabled={page <= 1} onClick={() => setPage(page - 1)}>Назад</Button><span className="text-sm text-muted">{page} из {pages}</span><Button size="sm" variant="soft" disabled={page >= pages} onClick={() => setPage(page + 1)}>Вперёд</Button></div>}
       {ban && <BanModal user={ban} onClose={() => setBan(null)} onDone={load} />}
+    </div>
+  );
+}
+
+
+type RootProfile = {
+  id: string; publicId: number; username: string; displayName: string; email: string; emailVerified: boolean;
+  role: 'USER' | 'ADMIN'; statusText: string; about: string; accentColor: string | null; profileBg: string | null;
+  activity: 'AUTO' | 'DND' | 'OFFLINE' | 'WORK' | 'FREE';
+  privacyMessages: 'EVERYONE' | 'FRIENDS' | 'NOBODY'; privacyRequests: 'EVERYONE' | 'NOBODY';
+  privacyOnline: 'EVERYONE' | 'FRIENDS' | 'NOBODY'; privacyLastSeen: 'EVERYONE' | 'FRIENDS' | 'NOBODY';
+  privacyProfile: 'EVERYONE' | 'FRIENDS' | 'NOBODY'; banned: boolean; banReason: string | null;
+  createdAt: string; lastSeenAt: string;
+};
+type RootChat = { id: string; type: string; title: string | null; lastMessageAt: string; members: { id: string; username: string; displayName: string; publicId: number }[]; lastMessage: { text: string; createdAt: string } | null };
+type RootMessage = { id: string; text: string; createdAt: string; deletedAt: string | null; sender: { id: string; username: string; displayName: string }; attachments: { originalName: string }[] };
+
+function RootControlTab() {
+  const [query, setQuery] = useState('');
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [selected, setSelected] = useState<RootProfile | null>(null);
+  const [reason, setReason] = useState('');
+  const [messageReason, setMessageReason] = useState('');
+  const [chats, setChats] = useState<RootChat[]>([]);
+  const [activeChat, setActiveChat] = useState<RootChat | null>(null);
+  const [messages, setMessages] = useState<RootMessage[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const search = useCallback(async () => {
+    try {
+      const r = await api.get<{ users: AdminUser[] }>('/admin/users?q=' + encodeURIComponent(query) + '&page=1&filter=all');
+      setUsers(r.users);
+    } catch (e) { toast.error(errMsg(e)); }
+  }, [query]);
+  useEffect(() => { const t = setTimeout(() => void search(), 250); return () => clearTimeout(t); }, [search]);
+
+  const selectUser = async (u: AdminUser) => {
+    setBusy(true);
+    try {
+      const r = await api.get<{ user: RootProfile }>('/admin/root/users/' + u.id);
+      setSelected(r.user); setReason(''); setChats([]); setMessages([]); setActiveChat(null);
+    } catch (e) { toast.error(errMsg(e)); }
+    finally { setBusy(false); }
+  };
+
+  const updateField = <K extends keyof RootProfile>(key: K, value: RootProfile[K]) => {
+    setSelected((old) => old ? { ...old, [key]: value } : old);
+  };
+
+  const save = async () => {
+    if (!selected || reason.trim().length < 8) return;
+    setBusy(true);
+    try {
+      const { id, createdAt: _created, lastSeenAt: _seen, ...fields } = selected;
+      const r = await api.patch<{ user: RootProfile }>('/admin/root/users/' + id, { ...fields, reason });
+      setSelected((old) => old ? { ...old, ...r.user } : old);
+      toast.success('Аккаунт обновлён'); setReason(''); void search();
+    } catch (e) { toast.error(errMsg(e)); }
+    finally { setBusy(false); }
+  };
+
+  const loadChats = async () => {
+    if (!selected || messageReason.trim().length < 8) return;
+    setBusy(true);
+    try {
+      const r = await api.get<{ chats: RootChat[] }>('/admin/root/users/' + selected.id + '/chats?reason=' + encodeURIComponent(messageReason));
+      setChats(r.chats); setActiveChat(null); setMessages([]);
+    } catch (e) { toast.error(errMsg(e)); }
+    finally { setBusy(false); }
+  };
+
+  const loadMessages = async (chat: RootChat) => {
+    if (messageReason.trim().length < 8) return;
+    setBusy(true);
+    try {
+      const r = await api.get<{ messages: RootMessage[] }>('/admin/root/chats/' + chat.id + '/messages?reason=' + encodeURIComponent(messageReason));
+      setActiveChat(chat); setMessages(r.messages);
+    } catch (e) { toast.error(errMsg(e)); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-danger/30 bg-danger/5 p-4 text-sm"><b className="text-danger">Режим владельца системы.</b> Изменения профилей и просмотр переписок доступны только root_admin. Все действия записываются в аудит; участники чата получают уведомление при просмотре сообщений.</div>
+      <div className="card p-4">
+        <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Найти пользователя: логин, имя или email" icon={<Search className="h-4 w-4" />} />
+        <div className="mt-3 max-h-56 divide-y divide-line/10 overflow-auto">
+          {users.map((u) => <button key={u.id} onClick={() => void selectUser(u)} className="flex w-full items-center gap-3 p-3 text-left hover:bg-raised">
+            <Avatar name={u.displayName} src={u.avatarUrl} seed={u.id} size={36} />
+            <span className="min-w-0 flex-1"><b className="block truncate text-sm">{u.displayName}</b><span className="text-xs text-muted">@{u.username} · ID {u.publicId} · {u.email}</span></span>
+            {u.role === 'ROOT_ADMIN' ? <span className="text-xs text-danger">root</span> : u.role === 'ADMIN' ? <span className="text-xs text-accent">admin</span> : null}
+          </button>)}
+          {users.length === 0 && <p className="p-4 text-sm text-muted">Пользователи не найдены</p>}
+        </div>
+      </div>
+      {selected && <div className="space-y-4">
+        <div className="card p-5">
+          <div className="mb-4 flex items-center justify-between gap-2"><div><h3 className="font-semibold">{selected.displayName} <span className="text-muted">@{selected.username}</span></h3><p className="text-xs text-muted">Внутренний ID: {selected.id} · Регистрация: {fmtDateTime(selected.createdAt)}</p></div><Button variant="ghost" size="sm" onClick={() => setSelected(null)}>Закрыть</Button></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-xs text-muted">Публичный ID<Input value={String(selected.publicId)} onChange={(e) => updateField('publicId', Number(e.target.value))} /></label>
+            <label className="text-xs text-muted">Логин<Input value={selected.username} onChange={(e) => updateField('username', e.target.value)} /></label>
+            <label className="text-xs text-muted">Имя<Input value={selected.displayName} onChange={(e) => updateField('displayName', e.target.value)} /></label>
+            <label className="text-xs text-muted">Email<Input value={selected.email} onChange={(e) => updateField('email', e.target.value)} /></label>
+            <label className="text-xs text-muted">Статус<Input value={selected.statusText} onChange={(e) => updateField('statusText', e.target.value)} /></label>
+            <label className="text-xs text-muted">Цвет акцента<Input value={selected.accentColor ?? ''} onChange={(e) => updateField('accentColor', e.target.value || null)} placeholder="#7c5cff" /></label>
+            <label className="text-xs text-muted">Фон профиля<Input value={selected.profileBg ?? ''} onChange={(e) => updateField('profileBg', e.target.value || null)} /></label>
+            <label className="text-xs text-muted">Роль<Select value={selected.role} onChange={(e) => updateField('role', e.target.value as RootProfile['role'])}><option value="USER">USER</option><option value="ADMIN">ADMIN</option></Select></label>
+            <label className="text-xs text-muted">Активность<Select value={selected.activity} onChange={(e) => updateField('activity', e.target.value as RootProfile['activity'])}>{['AUTO','DND','OFFLINE','WORK','FREE'].map((v) => <option key={v} value={v}>{v}</option>)}</Select></label>
+            <label className="text-xs text-muted">Кто может писать<Select value={selected.privacyMessages} onChange={(e) => updateField('privacyMessages', e.target.value as RootProfile['privacyMessages'])}>{['EVERYONE','FRIENDS','NOBODY'].map((v) => <option key={v} value={v}>{v}</option>)}</Select></label>
+            <label className="text-xs text-muted">Заявки в друзья<Select value={selected.privacyRequests} onChange={(e) => updateField('privacyRequests', e.target.value as RootProfile['privacyRequests'])}><option value="EVERYONE">EVERYONE</option><option value="NOBODY">NOBODY</option></Select></label>
+            <label className="text-xs text-muted">Профиль виден<Select value={selected.privacyProfile} onChange={(e) => updateField('privacyProfile', e.target.value as RootProfile['privacyProfile'])}>{['EVERYONE','FRIENDS','NOBODY'].map((v) => <option key={v} value={v}>{v}</option>)}</Select></label>
+            <label className="text-xs text-muted">Онлайн виден<Select value={selected.privacyOnline} onChange={(e) => updateField('privacyOnline', e.target.value as RootProfile['privacyOnline'])}>{['EVERYONE','FRIENDS','NOBODY'].map((v) => <option key={v} value={v}>{v}</option>)}</Select></label>
+            <label className="text-xs text-muted">Последний визит<Select value={selected.privacyLastSeen} onChange={(e) => updateField('privacyLastSeen', e.target.value as RootProfile['privacyLastSeen'])}>{['EVERYONE','FRIENDS','NOBODY'].map((v) => <option key={v} value={v}>{v}</option>)}</Select></label>
+          </div>
+          <div className="mt-3"><Textarea label="О себе" value={selected.about} onChange={(e) => updateField('about', e.target.value)} rows={3} /></div>
+          <div className="mt-3 flex flex-wrap gap-4 text-sm">
+            <label className="flex items-center gap-2"><input type="checkbox" checked={selected.emailVerified} onChange={(e) => updateField('emailVerified', e.target.checked)} /> Email подтверждён</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={selected.banned} onChange={(e) => updateField('banned', e.target.checked)} /> Заблокирован</label>
+          </div>
+          <div className="mt-3"><Input value={selected.banReason ?? ''} onChange={(e) => updateField('banReason', e.target.value || null)} placeholder="Причина блокировки" /></div>
+          <div className="mt-3"><Textarea label="Причина изменения (обязательно, минимум 8 символов)" value={reason} onChange={(e) => setReason(e.target.value)} rows={2} /></div>
+          <div className="mt-3 flex justify-end"><Button loading={busy} disabled={reason.trim().length < 8 || !selected.username || !selected.email || !selected.publicId} onClick={() => void save()}>Сохранить изменения</Button></div>
+        </div>
+        <div className="card p-5">
+          <h3 className="font-semibold">Переписки пользователя</h3>
+          <p className="mt-1 text-xs text-muted">Укажи причину доступа. Действие будет записано в аудит, участники получат уведомление.</p>
+          <div className="mt-3"><Textarea label="Причина просмотра" value={messageReason} onChange={(e) => setMessageReason(e.target.value)} rows={2} /></div>
+          <div className="mt-3"><Button variant="soft" loading={busy} disabled={messageReason.trim().length < 8} onClick={() => void loadChats()}>Загрузить чаты</Button></div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(220px,1fr)_2fr]">
+            <div className="max-h-[50dvh] space-y-2 overflow-auto">
+              {chats.map((chat) => <button key={chat.id} onClick={() => void loadMessages(chat)} className={clsx('w-full rounded-xl border p-3 text-left', activeChat?.id === chat.id ? 'border-accent bg-accent/10' : 'border-line/20 hover:bg-raised')}>
+                <b className="block text-sm">{chat.title || chat.members.map((m) => m.displayName).join(', ')}</b><span className="text-xs text-muted">{chat.type} · {chat.members.map((m) => '@' + m.username).join(', ')}</span>
+                {chat.lastMessage && <span className="mt-1 block truncate text-xs text-muted">{chat.lastMessage.text}</span>}
+              </button>)}
+            </div>
+            <div className="max-h-[60dvh] space-y-3 overflow-auto rounded-xl bg-raised p-3">
+              {!activeChat ? <p className="text-sm text-muted">Выбери чат слева для просмотра сообщений.</p> : messages.map((m) => <div key={m.id} className="rounded-xl border border-line/20 bg-panel p-3">
+                <div className="flex justify-between gap-2 text-xs"><b>{m.sender.displayName} <span className="font-normal text-muted">@{m.sender.username}</span></b><span className="text-muted">{fmtDateTime(m.createdAt)}</span></div>
+                <p className="mt-2 whitespace-pre-wrap break-words text-sm">{m.deletedAt ? '[Сообщение удалено]' : m.text}</p>
+                {m.attachments.length > 0 && <p className="mt-2 text-xs text-muted">Вложения: {m.attachments.map((a) => a.originalName).join(', ')}</p>}
+              </div>)}
+            </div>
+          </div>
+        </div>
+      </div>}
     </div>
   );
 }
