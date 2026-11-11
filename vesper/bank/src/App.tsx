@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Activity, ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Bell, BriefcaseBusiness, CalendarDays, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard, Eye, EyeOff, FileText, Home, LayoutGrid, LogOut, Plus, Search, Settings, ShieldCheck, SlidersHorizontal, Sparkles, UserRound, Wallet, X } from 'lucide-react';
 
 type Tx = { id: number; title: string; detail: string; amount: number; date: string; category: string; kind: 'income' | 'expense' | 'transfer' };
@@ -20,8 +20,14 @@ type Page = 'home' | 'accounts' | 'cards' | 'payments' | 'history' | 'profile';
 
 export default function App() {
   const [page, setPage] = useState<Page>('home');
-  const [accounts, setAccounts] = useState(initialAccounts);
-  const [tx, setTx] = useState(initialTx);
+  const [accounts, setAccounts] = useState<Account[]>(() => {
+    try { const saved = localStorage.getItem('north-demo-accounts'); return saved ? JSON.parse(saved) as Account[] : initialAccounts; } catch { return initialAccounts; }
+  });
+  const [tx, setTx] = useState<Tx[]>(() => {
+    try { const saved = localStorage.getItem('north-demo-transactions'); return saved ? JSON.parse(saved) as Tx[] : initialTx; } catch { return initialTx; }
+  });
+  useEffect(() => { localStorage.setItem('north-demo-accounts', JSON.stringify(accounts)); }, [accounts]);
+  useEffect(() => { localStorage.setItem('north-demo-transactions', JSON.stringify(tx)); }, [tx]);
   const [showBalance, setShowBalance] = useState(true);
   const [modal, setModal] = useState<'transfer' | 'payment' | 'topup' | null>(null);
   const [amount, setAmount] = useState('');
@@ -69,7 +75,7 @@ export default function App() {
     <main className="main">
       <header className="topbar"><div className="crumb">Личный кабинет <ChevronRight size={14}/> <b>{title}</b></div><div className="top-actions"><span className="demo-pill"><i/> ДЕМО-РЕЖИМ</span><button className="icon-btn" onClick={() => toast('Новых уведомлений нет')} aria-label="Уведомления"><Bell size={19}/><i/></button><button className="top-avatar" onClick={() => changePage('profile')}>А</button></div></header>
       <div className="content">
-        <div className="page-heading"><div><div className="eyebrow">ВТОРНИК, 11 НОЯБРЯ</div><h1>{page === 'home' ? 'Добрый день, Александр' : title}</h1><p>{page === 'home' ? 'Ваши финансы — под рукой. Всё спокойно и под контролем.' : 'Управляйте своими демо-финансами в одном месте.'}</p></div><button className="secondary-btn" onClick={() => setShowBalance(v => !v)}>{showBalance ? <EyeOff size={16}/> : <Eye size={16}/>} {showBalance ? 'Скрыть суммы' : 'Показать суммы'}</button></div>
+        <div className="page-heading"><div><div className="eyebrow">{new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date()).toLocaleUpperCase('ru-RU')}</div><h1>{page === 'home' ? 'Добрый день, Александр' : title}</h1><p>{page === 'home' ? 'Ваши финансы — под рукой. Всё спокойно и под контролем.' : 'Управляйте своими демо-финансами в одном месте.'}</p></div><button className="secondary-btn" onClick={() => setShowBalance(v => !v)}>{showBalance ? <EyeOff size={16}/> : <Eye size={16}/>} {showBalance ? 'Скрыть суммы' : 'Показать суммы'}</button></div>
         {page === 'home' && <>
           <section className="hero-grid">
             <div className="balance-card"><div className="balance-top"><span>ОБЩИЙ БАЛАНС</span><span className="balance-live"><i/> ДЕМО-СЧЕТА</span></div><div className="balance-number">{showBalance ? money(total) : '•••••• ₽'}</div><div className="balance-foot"><span><span className="trend">↗ 4,8%</span> за этот месяц</span><span>Обновлено только что</span></div><div className="balance-actions"><button onClick={() => setModal('transfer')}><ArrowUpRight size={17}/> Перевести</button><button onClick={() => setModal('topup')}><Plus size={17}/> Пополнить</button><button onClick={() => changePage('history')}><FileText size={17}/> Выписка</button></div><div className="orb orb-one"/><div className="orb orb-two"/></div>
