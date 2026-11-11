@@ -21,3 +21,6 @@ export type AdminSummary = {
   audit: AuditEntry[];
   tickets: SupportTicket[];
 };
+
+export type Page = 'home' | 'accounts' | 'cards' | 'payments' | 'history' | 'analytics' | 'savings' | 'notifications' | 'profile' | 'support' | 'admin';
+export type Operation = 'transfer' | 'payment' | 'topup' | 'internal';
