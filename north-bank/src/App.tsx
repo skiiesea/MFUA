@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   Activity, ArrowLeftRight, Bell, Check, ChevronDown, ChevronRight, CreditCard,
   Eye, EyeOff, Headphones, Home, LayoutDashboard, PieChart, Plus, Settings,
-  ShieldCheck, Target, Wallet, X,
+  ShieldCheck, Target, Wallet, X, RefreshCw,
 } from 'lucide-react';
 import { apiRequest, getAdminSummary, getBankState, postBankAction } from './api';
 import { money } from './format';
