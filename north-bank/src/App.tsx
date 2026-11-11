@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
-  Activity, ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Bell, BriefcaseBusiness, Check,
-  ChevronDown, ChevronRight, CircleHelp, CreditCard, Eye, EyeOff, FileText, Home,
-  LayoutDashboard, LogOut, Plus, Search, Settings, ShieldCheck, SlidersHorizontal,
-  Sparkles, Target, UserRound, Wallet, X, Snowflake, PieChart, Headphones, Landmark,
-  RefreshCw, LockKeyhole, TrendingUp, CircleDollarSign, Send, BadgeCheck,
+  Activity, ArrowLeftRight, Bell, Check, ChevronDown, ChevronRight, CreditCard,
+  Eye, EyeOff, Headphones, Home, LayoutDashboard, PieChart, Plus, Settings,
+  ShieldCheck, Target, Wallet, X,
 } from 'lucide-react';
 import { apiRequest, getAdminSummary, getBankState, postBankAction } from './api';
 import { money } from './format';
