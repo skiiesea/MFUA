@@ -18,7 +18,7 @@ interface Props {
   editing: Message | null;
   onCancel: () => void;
   onSend: (text: string, attachments: AttachmentDto[]) => void;
-  onEdit: (text: string) => void;
+  onEdit: (text: string) => Promise<boolean>;
 }
 
 export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: Props) {
@@ -28,6 +28,7 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
   const [emoji, setEmoji] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const previousEditingId = useRef<string | null>(null);
   const typingSent = useRef(0);
   const stopTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -39,8 +40,14 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
   }, []);
 
   useEffect(() => {
-    if (editing) setText(editing.text);
-    else if (!replyTo) setText((t) => t);
+    if (editing) {
+      setText(editing.text);
+      previousEditingId.current = editing.id;
+    } else if (previousEditingId.current) {
+      // Never leave the previous edit draft in the composer after closing edit mode.
+      setText('');
+      previousEditingId.current = null;
+    }
     ref.current?.focus();
     setTimeout(resize, 0);
   }, [editing, replyTo, resize]);
@@ -94,11 +101,15 @@ export function Composer({ chat, replyTo, editing, onCancel, onSend, onEdit }: P
   };
 
   const canSubmit = !uploading && (editing ? text.trim().length > 0 : text.trim().length > 0 || files.length > 0);
-  const submit = () => {
+  const submit = async () => {
     if (!canSubmit) return;
     stopTyping();
-    if (editing) onEdit(text.trim());
-    else onSend(text.trim(), files);
+    if (editing) {
+      const saved = await onEdit(text.trim());
+      if (!saved) return;
+    } else {
+      onSend(text.trim(), files);
+    }
     setText('');
     setFiles([]);
     setEmoji(false);
