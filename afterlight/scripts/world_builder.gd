@@ -1,6 +1,5 @@
 extends Node3D
 
-const PLAYER_SCENE: PackedScene = preload("res://scenes/player.tscn")
 const TREE_SEED: int = 4102026
 
 var ground_material: StandardMaterial3D
@@ -159,16 +158,17 @@ func _create_forest() -> void:
 		)
 		foliage.set_instance_color(index, canopy_colors[rng.randi_range(0, canopy_colors.size() - 1)])
 
-		var tree_collision := StaticBody3D.new()
-		tree_collision.name = "TreeTrunkCollision"
-		tree_collision.position = Vector3(position.x, 1.25 * scale_factor, position.z)
-		var collision_shape := CollisionShape3D.new()
-		var cylinder_shape := CylinderShape3D.new()
-		cylinder_shape.radius = 0.2 * scale_factor
-		cylinder_shape.height = 2.5 * scale_factor
-		collision_shape.shape = cylinder_shape
-		tree_collision.add_child(collision_shape)
-		add_child(tree_collision)
+		if Vector2(position.x, position.z).length() < 42.0:
+			var tree_collision := StaticBody3D.new()
+			tree_collision.name = "TreeTrunkCollision"
+			tree_collision.position = Vector3(position.x, 1.25 * scale_factor, position.z)
+			var collision_shape := CollisionShape3D.new()
+			var cylinder_shape := CylinderShape3D.new()
+			cylinder_shape.radius = 0.2 * scale_factor
+			cylinder_shape.height = 2.5 * scale_factor
+			collision_shape.shape = cylinder_shape
+			tree_collision.add_child(collision_shape)
+			add_child(tree_collision)
 
 	var trunk_instance := MultiMeshInstance3D.new()
 	trunk_instance.name = "ForestTrunks"
@@ -227,7 +227,7 @@ func _create_station() -> void:
 	var trim_material := _make_material(Color(0.18, 0.22, 0.21))
 	var lamp_material := _make_material(Color(0.78, 0.48, 0.19), 0.35)
 
-	_add_box(station, "Foundation", Vector3(6.4, 0.3, 5.4), Vector3(0.0, 0.15, 0.0), foundation_material, true)
+	_add_box(station, "Foundation", Vector3(6.4, 0.3, 5.4), Vector3(0.0, 0.15, 0.0), foundation_material, false)
 	_add_box(station, "BackWall", Vector3(6.0, 3.0, 0.2), Vector3(0.0, 1.75, -2.55), station_wall_material, true)
 	_add_box(station, "LeftWall", Vector3(0.2, 3.0, 5.0), Vector3(-2.9, 1.75, 0.0), station_wall_material, true)
 	_add_box(station, "RightWall", Vector3(0.2, 3.0, 5.0), Vector3(2.9, 1.75, 0.0), station_wall_material, true)
@@ -335,7 +335,7 @@ func _spawn_pickup(
 
 	var collision := CollisionShape3D.new()
 	var sphere_shape := SphereShape3D.new()
-	sphere_shape.radius = 0.82
+	sphere_shape.radius = 1.0
 	collision.shape = sphere_shape
 	pickup.add_child(collision)
 
