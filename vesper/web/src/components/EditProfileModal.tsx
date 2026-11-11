@@ -6,6 +6,7 @@ import { ACCENTS, BG_PRESETS } from '../lib/color';
 import { useAuth } from '../store/auth';
 import { toast } from '../store/ui';
 import type { Activity, Self } from '../types';
+import { AppleEmojiText } from './AppleEmoji';
 import { ImageCropper } from './ImageCropper';
 import { ProfileHeader } from './ProfileHeader';
 import { Button, Input, Modal, Segmented, Textarea } from './ui';
@@ -33,6 +34,8 @@ export function EditProfileModal({ user, onClose, onSaved }: { user: Self; onClo
   const [uState, setUState] = useState<'idle' | 'checking' | 'free' | 'taken'>('idle');
   const avatarInput = useRef<HTMLInputElement>(null);
   const coverInput = useRef<HTMLInputElement>(null);
+  const statusDisplayRef = useRef<HTMLDivElement>(null);
+  const aboutDisplayRef = useRef<HTMLDivElement>(null);
 
   const [avatarObjectUrl, setAvatarObjectUrl] = useState<string | null>(null);
   const [coverObjectUrl, setCoverObjectUrl] = useState<string | null>(null);
@@ -186,8 +189,26 @@ export function EditProfileModal({ user, onClose, onSaved }: { user: Self; onClo
             hint={uState === 'checking' ? 'Проверяем…' : uState === 'free' ? 'Свободен' : undefined}
             right={uState === 'free' ? <CheckCircle2 className="mx-3 h-4 w-4 text-ok" /> : uState === 'taken' ? <XCircle className="mx-3 h-4 w-4 text-danger" /> : undefined} />
         </div>
-        <Input label="Статус" value={d.statusText} maxLength={100} onChange={(e) => set('statusText', e.target.value)} placeholder="Чем вы сейчас заняты?" hint={`${d.statusText.length}/100`} error={errors.statusText} />
-        <Textarea label="О себе" value={d.about} maxLength={500} onChange={(e) => set('about', e.target.value)} placeholder="Расскажите о себе в паре предложений" hint={`${d.about.length}/500`} error={errors.about} />
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-fg/90" htmlFor="profile-status">Статус</label>
+          <div className="relative">
+            <div ref={statusDisplayRef} aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 flex items-center overflow-hidden whitespace-pre px-4 text-sm text-fg">
+              <AppleEmojiText text={d.statusText} size={14} />
+            </div>
+            <input id="profile-status" value={d.statusText} maxLength={100} onChange={(e) => set('statusText', e.target.value)} onScroll={(e) => { if (statusDisplayRef.current) statusDisplayRef.current.scrollLeft = e.currentTarget.scrollLeft; }} placeholder="Чем вы сейчас заняты?" aria-invalid={!!errors.statusText} className={clsx('w-full rounded-xl border bg-raised/70 px-4 h-11 text-sm text-transparent caret-fg placeholder:text-muted/70 selection:bg-accent/30 transition focus:outline-none focus:ring-4', errors.statusText ? 'border-danger/60 focus:border-danger focus:ring-danger/15' : 'border-line/10 hover:border-line/20 focus:border-accent/70 focus:ring-accent/15')} />
+          </div>
+          {errors.statusText ? <p className="mt-1.5 text-xs text-danger" role="alert">{errors.statusText}</p> : <p className="mt-1.5 text-xs text-muted">{d.statusText.length}/100</p>}
+        </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-fg/90" htmlFor="profile-about">О себе</label>
+          <div className="relative">
+            <div ref={aboutDisplayRef} aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-y-auto whitespace-pre-wrap break-words px-4 py-3 text-sm leading-5 text-fg">
+              <AppleEmojiText text={d.about} size={14} />
+            </div>
+            <textarea id="profile-about" value={d.about} maxLength={500} onChange={(e) => set('about', e.target.value)} onScroll={(e) => { if (aboutDisplayRef.current) aboutDisplayRef.current.scrollTop = e.currentTarget.scrollTop; }} placeholder="Расскажите о себе в паре предложений" aria-invalid={!!errors.about} className={clsx('min-h-[88px] w-full resize-y rounded-xl border bg-raised/70 px-4 py-3 text-sm leading-5 text-transparent caret-fg placeholder:text-muted/70 selection:bg-accent/30 transition focus:outline-none focus:ring-4', errors.about ? 'border-danger/60 focus:border-danger focus:ring-danger/15' : 'border-line/10 hover:border-line/20 focus:border-accent/70 focus:ring-accent/15')} />
+          </div>
+          {errors.about ? <p className="mt-1.5 text-xs text-danger" role="alert">{errors.about}</p> : <p className="mt-1.5 text-xs text-muted">{d.about.length}/500</p>}
+        </div>
 
         <div>
           <p className="mb-2 text-sm font-medium">Доступность</p>
