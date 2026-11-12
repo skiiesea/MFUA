@@ -7,6 +7,12 @@ on:
     paths:
       - "afterlight-native/**"
       - ".github/workflows/afterlight-native-windows.yml"
+  pull_request:
+    branches:
+      - codex/afterlight-raylib
+    paths:
+      - "afterlight-native/**"
+      - ".github/workflows/afterlight-native-windows.yml"
   workflow_dispatch:
 
 permissions:
