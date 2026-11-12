@@ -7,11 +7,14 @@ This folder is the native C++ / raylib continuation of AFTERLIGHT. It is indepen
 - Native Windows x64 executable built with C++17 and raylib 5.5.
 - First-person movement, mouse look, sprinting and jumping.
 - A low-poly forest valley, service road, pond and Meteorological Station 04.
-- Collectible wood and stone with a small inventory HUD.
-- Local save/load: F5 saves; F9 starts a fresh run.
+- Field inventory with wood, stone and wild berries.
+- Survival needs: health, hunger, thirst and sprint stamina.
+- Resource gathering, berry consumption, pond water interaction and campfire crafting.
+- Dynamic day/night cycle and periodic rain.
+- Versioned local save/load: F5 saves; F9 starts a fresh run.
 - Target profile: 1280×720, 30 FPS cap, low-cost primitive geometry.
 
-This is an early playable foundation, not the finished survival game. Crafting, building, needs, weather simulation, story events, audio, polished assets and a full save system remain future work.
+This is an early playable foundation, not the finished survival game. Advanced crafting, building, story events, spatial audio, high-quality texture assets and expanded locations remain future work.
 
 ## Build on Windows
 
@@ -37,6 +40,10 @@ The GitHub Actions workflow `.github/workflows/afterlight-native-windows.yml` bu
 | Left Shift | Sprint |
 | Space | Jump |
 | E | Collect nearby resource |
+| F | Drink at pond / inspect station |
+| I | Toggle inventory |
+| 1 | Eat berries |
+| C | Craft and place campfire (3 wood + 2 stone) |
 | F5 | Save |
 | F9 | Start a fresh run |
 | H | Toggle help |
