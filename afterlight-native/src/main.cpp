@@ -12,7 +12,7 @@ constexpr float WORLD_LIMIT = 58.0f;
 constexpr float PLAYER_RADIUS = 0.38f;
 
 struct BoxCollider { float x, z, halfX, halfZ; };
-constexpr std::array<BoxCollider, 4> STATION_COLLIDERS{{
+constexpr std::array<BoxCollider, 5> STATION_COLLIDERS{{
     {0.0f, 35.0f, 6.5f, 0.35f}, {-6.5f, 31.0f, 0.35f, 4.0f},
     {6.5f, 31.0f, 0.35f, 4.0f}, {-3.8f, 27.0f, 2.7f, 0.35f},
     {3.8f, 27.0f, 2.7f, 0.35f}
@@ -125,13 +125,10 @@ void DrawWorld() {
         DrawCube({x, 2.45f, 26.72f}, 0.055f, 1.18f, 0.045f, Color{64, 69, 66, 255});
         DrawCube({x, 2.45f, 26.72f}, 1.55f, 0.055f, 0.045f, Color{64, 69, 66, 255});
     }
-    DrawCube({0.0f, 1.45f, 26.78f}, 1.75f, 2.85f, 0.16f, Color{49, 55, 52, 255});
-    DrawCube({0.0f, 1.45f, 26.67f}, 1.53f, 2.66f, 0.035f, Color{76, 78, 68, 255});
-    DrawSphere({0.58f, 1.45f, 26.58f}, 0.07f, Color{183, 157, 92, 255});
+    DrawCube({0.0f, 1.45f, 27.16f}, 1.7f, 2.8f, 0.12f, Color{30, 35, 33, 255});
     DrawCube({-4.8f, 5.0f, 31.0f}, 0.22f, 1.45f, 0.22f, Color{66, 72, 69, 255});
     DrawCylinder({-4.8f, 5.9f, 31.0f}, 0.0f, 0.65f, 0.55f, 10, Color{133, 139, 130, 255});
     DrawCube({0.0f, 3.45f, 26.72f}, 2.3f, 0.42f, 0.08f, Color{142, 111, 61, 255});
-    DrawText("STATION 04", 0, 0, 1, BLANK); // Keep all world labels in the 2D HUD.
 
     // Antenna, cables and equipment silhouettes on the roof.
     DrawCylinder({4.7f, 5.25f, 32.0f}, 0.06f, 0.06f, 2.0f, 7, Color{61, 68, 66, 255});
