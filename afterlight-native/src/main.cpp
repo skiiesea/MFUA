@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "rlgl.h"
 
 #include <algorithm>
 #include <array>
@@ -83,6 +84,38 @@ Mesh MakeTiledPlane(float width, float length, float repeatX, float repeatY) {
     for (int i = 0; i < mesh.vertexCount * 2; ++i) mesh.texcoords[i] *= (i % 2 == 0) ? repeatX : repeatY;
     UpdateMeshBuffer(mesh, 1, mesh.texcoords, mesh.vertexCount * 2 * static_cast<int>(sizeof(float)), 0);
     return mesh;
+}
+
+void DrawCubeTexture(Texture2D texture, Vector3 p, float w, float h, float d, Color tint) {
+    const float x0 = p.x - w*0.5f, x1 = p.x + w*0.5f;
+    const float y0 = p.y - h*0.5f, y1 = p.y + h*0.5f;
+    const float z0 = p.z - d*0.5f, z1 = p.z + d*0.5f;
+    rlSetTexture(texture.id);
+    rlBegin(RL_QUADS);
+    rlColor4ub(tint.r, tint.g, tint.b, tint.a);
+    // Front and back
+    rlNormal3f(0, 0, 1);
+    rlTexCoord2f(0, 1); rlVertex3f(x0,y0,z1); rlTexCoord2f(1, 1); rlVertex3f(x1,y0,z1);
+    rlTexCoord2f(1, 0); rlVertex3f(x1,y1,z1); rlTexCoord2f(0, 0); rlVertex3f(x0,y1,z1);
+    rlNormal3f(0, 0, -1);
+    rlTexCoord2f(0, 1); rlVertex3f(x1,y0,z0); rlTexCoord2f(1, 1); rlVertex3f(x0,y0,z0);
+    rlTexCoord2f(1, 0); rlVertex3f(x0,y1,z0); rlTexCoord2f(0, 0); rlVertex3f(x1,y1,z0);
+    // Left and right
+    rlNormal3f(-1, 0, 0);
+    rlTexCoord2f(0, 1); rlVertex3f(x0,y0,z0); rlTexCoord2f(1, 1); rlVertex3f(x0,y0,z1);
+    rlTexCoord2f(1, 0); rlVertex3f(x0,y1,z1); rlTexCoord2f(0, 0); rlVertex3f(x0,y1,z0);
+    rlNormal3f(1, 0, 0);
+    rlTexCoord2f(0, 1); rlVertex3f(x1,y0,z1); rlTexCoord2f(1, 1); rlVertex3f(x1,y0,z0);
+    rlTexCoord2f(1, 0); rlVertex3f(x1,y1,z0); rlTexCoord2f(0, 0); rlVertex3f(x1,y1,z1);
+    // Top and bottom
+    rlNormal3f(0, 1, 0);
+    rlTexCoord2f(0, 1); rlVertex3f(x0,y1,z1); rlTexCoord2f(1, 1); rlVertex3f(x1,y1,z1);
+    rlTexCoord2f(1, 0); rlVertex3f(x1,y1,z0); rlTexCoord2f(0, 0); rlVertex3f(x0,y1,z0);
+    rlNormal3f(0, -1, 0);
+    rlTexCoord2f(0, 1); rlVertex3f(x0,y0,z0); rlTexCoord2f(1, 1); rlVertex3f(x1,y0,z0);
+    rlTexCoord2f(1, 0); rlVertex3f(x1,y0,z1); rlTexCoord2f(0, 0); rlVertex3f(x0,y0,z1);
+    rlEnd();
+    rlSetTexture(0);
 }
 
 void DrawWorld(Texture2D concreteTexture, Mesh terrainMesh, Material terrainMaterial, Mesh roadMesh, Material roadMaterial) {
