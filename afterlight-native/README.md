@@ -1,12 +1,12 @@
 # AFTERLIGHT — native Windows prototype
 
-This folder is the native C++ / raylib continuation of AFTERLIGHT. It is independent of the Godot project in `afterlight/`; the Godot files are intentionally preserved.
+This is the only actively developed AFTERLIGHT game: a native C++17 / raylib Windows project. Godot is not required, used, or part of the build pipeline.
 
 ## Current prototype
 
 - Native Windows x64 executable built with C++17 and raylib 5.5.
 - First-person movement, mouse look, sprinting and jumping.
-- A low-poly forest valley, service road, pond and Meteorological Station 04.
+- Forest valley, service road, pond and Meteorological Station 04, with procedural tiled terrain/gravel/concrete textures, denser ground detail and atmospheric sky gradient.
 - Field inventory with wood, stone and wild berries.
 - Survival needs: health, hunger, thirst and sprint stamina.
 - Resource gathering, berry consumption, pond water interaction and campfire crafting.
@@ -51,4 +51,4 @@ The GitHub Actions workflow `.github/workflows/afterlight-native-windows.yml` bu
 
 ## Performance note
 
-The prototype uses simple primitive meshes and a restrained scene. The 30 FPS cap is a target, not a verified performance result on the user's GT 1030 system. A real runtime pass on that machine is still required.
+The prototype uses lightweight procedural textures and primitive geometry rather than high-poly scanned assets. The 30 FPS cap is a target, not a verified performance result on the user's GT 1030 system. A real runtime pass on that machine is still required.
