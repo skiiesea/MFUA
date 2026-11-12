@@ -51,23 +51,45 @@ float DistanceXZ(Vector3 a, Vector3 b) {
 }
 
 void DrawTree(float x, float z, float scale) {
-    const float trunkHeight = 3.1f * scale;
-    DrawCylinder({x, trunkHeight * 0.5f, z}, 0.20f * scale, 0.15f * scale,
-                 trunkHeight, 9, Color{77, 65, 52, 255});
-    DrawCylinder({x, trunkHeight * 0.72f, z}, 0.12f * scale, 0.08f * scale,
-                 trunkHeight * 0.52f, 7, Color{91, 73, 55, 255});
-    DrawCylinder({x, trunkHeight + 0.75f * scale, z}, 0.0f, 1.22f * scale,
-                 2.25f * scale, 8, Color{43, 66, 51, 255});
-    DrawCylinder({x, trunkHeight + 1.45f * scale, z}, 0.0f, 0.92f * scale,
-                 1.85f * scale, 8, Color{54, 78, 57, 255});
-    DrawCylinder({x, trunkHeight + 2.02f * scale, z}, 0.0f, 0.58f * scale,
-                 1.25f * scale, 8, Color{66, 88, 62, 255});
+    // Layered forest floor shadow keeps trees visually grounded in the scene.
+    DrawCylinder({x, 0.018f, z}, 1.45f * scale, 1.65f * scale, 0.025f,
+                 12, Fade(Color{25, 31, 25, 255}, 0.34f));
+
+    const float trunkHeight = 3.35f * scale;
+    const Vector3 trunkBase{x, 0.08f, z};
+    const Vector3 trunkTop{x + 0.10f * scale, trunkHeight, z - 0.06f * scale};
+    DrawCylinderEx(trunkBase, trunkTop, 0.25f * scale, 0.13f * scale, 9,
+                   Color{76, 59, 43, 255});
+
+    // Exposed branches break the old repeated-cone silhouette.
+    DrawCylinderEx({x, 1.75f * scale, z}, {x - 1.05f * scale, 3.15f * scale, z + 0.18f * scale},
+                   0.105f * scale, 0.045f * scale, 7, Color{79, 61, 45, 255});
+    DrawCylinderEx({x + 0.02f * scale, 2.15f * scale, z}, {x + 0.92f * scale, 3.55f * scale, z - 0.12f * scale},
+                   0.09f * scale, 0.035f * scale, 7, Color{82, 63, 46, 255});
+    DrawCylinderEx({x, 2.55f * scale, z}, {x - 0.62f * scale, 4.05f * scale, z - 0.55f * scale},
+                   0.07f * scale, 0.025f * scale, 6, Color{82, 63, 46, 255});
+
+    // Overlapping irregular crowns create a fuller broadleaf canopy.
+    const Color deep{35, 57, 43, 255};
+    const Color mid{48, 72, 51, 255};
+    const Color light{66, 87, 57, 255};
+    DrawSphereEx({x, 3.35f * scale, z}, 1.22f * scale, 9, 9, deep);
+    DrawSphereEx({x - 0.66f * scale, 3.72f * scale, z + 0.12f * scale}, 0.91f * scale, 8, 8, mid);
+    DrawSphereEx({x + 0.70f * scale, 3.78f * scale, z - 0.10f * scale}, 0.94f * scale, 8, 8, deep);
+    DrawSphereEx({x - 0.20f * scale, 4.36f * scale, z - 0.12f * scale}, 0.98f * scale, 9, 9, mid);
+    DrawSphereEx({x + 0.25f * scale, 4.88f * scale, z + 0.08f * scale}, 0.72f * scale, 8, 8, light);
 }
 
 void DrawRock(Vector3 p, float scale, Color tint) {
-    DrawSphere({p.x, p.y + 0.22f * scale, p.z}, 0.55f * scale, tint);
-    DrawSphere({p.x + 0.30f * scale, p.y + 0.16f * scale, p.z - 0.12f * scale},
-               0.36f * scale, Color{tint.r, tint.g, tint.b, 255});
+    DrawCylinder({p.x, p.y + 0.012f, p.z}, 0.72f * scale, 0.88f * scale,
+                 0.02f, 10, Fade(Color{24, 28, 25, 255}, 0.28f));
+    DrawSphereEx({p.x, p.y + 0.24f * scale, p.z}, 0.55f * scale, 8, 8, tint);
+    DrawSphereEx({p.x + 0.30f * scale, p.y + 0.16f * scale, p.z - 0.12f * scale},
+                 0.36f * scale, 7, 7, Color{tint.r, tint.g, tint.b, 255});
+    DrawSphereEx({p.x - 0.25f * scale, p.y + 0.12f * scale, p.z + 0.18f * scale},
+                 0.25f * scale, 7, 7, Color{static_cast<unsigned char>(std::min(255, tint.r + 13)),
+                 static_cast<unsigned char>(std::min(255, tint.g + 13)),
+                 static_cast<unsigned char>(std::min(255, tint.b + 13)), 255});
 }
 
 Texture2D MakeNoiseTexture(Color tint, float scale, int offsetX, int offsetY) {
