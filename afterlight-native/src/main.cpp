@@ -8,7 +8,6 @@
 namespace {
 constexpr int SCREEN_WIDTH = 1280;
 constexpr int SCREEN_HEIGHT = 720;
-constexpr float PI = 3.1415926535f;
 constexpr float WORLD_LIMIT = 58.0f;
 
 struct Pickup {
@@ -82,7 +81,6 @@ void DrawWorld() {
     DrawCube({2.3f, 2.4f, 26.90f}, 2.0f, 1.4f, 0.12f, Color{65, 105, 115, 255});
     DrawCube({-4.5f, 5.0f, 31.0f}, 0.25f, 1.6f, 0.25f, Color{75, 80, 78, 255});
     DrawCylinder({-4.5f, 6.1f, 31.0f}, 0.0f, 0.65f, 0.7f, 8, Color{145, 151, 145, 255});
-    DrawText("STATION 04", 0, 0, 1, BLANK); // Label is drawn in the HUD.
 
     // Small pond and shoreline.
     DrawCylinder({-24.0f, 0.04f, 23.0f}, 7.2f, 7.2f, 0.08f, 32,
@@ -130,8 +128,8 @@ int main() {
     LoadGame(player, pickups);
 
     bool showHelp = true;
-    bool hasInteracted = false;
     float messageTimer = 0.0f;
+    const char* statusMessage = "";
 
     while (!WindowShouldClose()) {
         const float dt = std::min(GetFrameTime(), 0.05f);
@@ -139,7 +137,7 @@ int main() {
         player.yaw -= mouse.x * 0.0025f;
         player.pitch = std::clamp(player.pitch - mouse.y * 0.0022f, -1.35f, 1.35f);
 
-        const Vector3 forward{std::sinf(player.yaw), 0.0f, std::cosf(player.yaw)};
+        const Vector3 forward{std::sin(player.yaw), 0.0f, std::cos(player.yaw)};
         const Vector3 right{std::cosf(player.yaw), 0.0f, -std::sinf(player.yaw)};
         Vector3 movement{0.0f, 0.0f, 0.0f};
         if (IsKeyDown(KEY_W)) { movement.x += forward.x; movement.z += forward.z; }
@@ -185,25 +183,26 @@ int main() {
             pickup.active = false;
             if (pickup.type == 0) ++player.wood;
             else ++player.stone;
-            hasInteracted = true;
+            statusMessage = "Resource collected / progress saved";
             messageTimer = 2.0f;
             SaveGame(player, pickups);
         }
 
         if (IsKeyPressed(KEY_F5)) {
             SaveGame(player, pickups);
-            hasInteracted = true;
+            statusMessage = "Game saved";
             messageTimer = 2.0f;
         }
         if (IsKeyPressed(KEY_F9)) {
             player = Player{};
             for (auto& pickup : pickups) pickup.active = true;
             SaveGame(player, pickups);
-            hasInteracted = true;
+            statusMessage = "New run started";
             messageTimer = 2.0f;
         }
         if (IsKeyPressed(KEY_H)) showHelp = !showHelp;
         if (IsKeyPressed(KEY_ESCAPE)) EnableCursor();
+        if (!IsCursorHidden() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) DisableCursor();
 
         Camera3D camera{};
         camera.position = player.position;
@@ -268,8 +267,7 @@ int main() {
 
         if (messageTimer > 0.0f) {
             messageTimer -= dt;
-            const char* message = IsKeyDown(KEY_F5) ? "Game saved" : "Resource collected / progress saved";
-            DrawText(message, SCREEN_WIDTH / 2 - MeasureText(message, 18) / 2,
+            DrawText(statusMessage, SCREEN_WIDTH / 2 - MeasureText(statusMessage, 18) / 2,
                      SCREEN_HEIGHT - 54, 18, Color{218, 211, 184, 255});
         }
 
