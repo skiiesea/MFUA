@@ -1,0 +1,57 @@
+name: AFTERLIGHT native Windows build
+
+on:
+  push:
+    branches:
+      - codex/afterlight-raylib
+    paths:
+      - "afterlight-native/**"
+      - ".github/workflows/afterlight-native-windows.yml"
+  pull_request:
+    branches:
+      - codex/afterlight
+    paths:
+      - "afterlight-native/**"
+      - ".github/workflows/afterlight-native-windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S afterlight-native -B build -A x64 -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Stage standalone executable
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path build -Filter AFTERLIGHT.exe -Recurse |
+            Where-Object { $_.FullName -match "Release" } |
+            Select-Object -First 1
+          if (-not $exe) {
+            throw "AFTERLIGHT.exe was not produced by the build."
+          }
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item $exe.FullName dist/AFTERLIGHT.exe
+          @"
+          AFTERLIGHT native prototype
+          Run AFTERLIGHT.exe. No Godot installation is required.
+          Save data is written to afterlight_save.txt beside the working directory.
+          "@ | Set-Content dist/README.txt
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: AFTERLIGHT-Windows
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
