@@ -232,6 +232,17 @@ int main() {
             weatherClock = 0.0f;
             raining = !raining;
         }
+        if (raining) {
+            for (auto& drop : rainDrops) {
+                drop.y -= 19.0f * dt;
+                drop.x += 1.1f * dt;
+                if (drop.y < 0.0f) {
+                    drop.y = 22.0f + static_cast<float>((static_cast<int>(drop.x * 7.0f) % 9 + 9) % 9);
+                    drop.x = player.position.x + static_cast<float>((static_cast<int>(drop.z * 5.0f) % 31 + 31) % 31) - 15.0f;
+                    drop.z = player.position.z + static_cast<float>((static_cast<int>(drop.x * 3.0f) % 31 + 31) % 31) - 15.0f;
+                }
+            }
+        }
         const Vector2 mouse = GetMouseDelta();
         player.yaw -= mouse.x * 0.0025f;
         player.pitch = std::clamp(player.pitch - mouse.y * 0.0022f, -1.35f, 1.35f);
