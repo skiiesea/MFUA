@@ -86,7 +86,7 @@ Mesh MakeTiledPlane(float width, float length, float repeatX, float repeatY) {
     return mesh;
 }
 
-void DrawCubeTexture(Texture2D texture, Vector3 p, float w, float h, float d, Color tint) {
+void DrawStationTexturedCube(Texture2D texture, Vector3 p, float w, float h, float d, Color tint) {
     const float x0 = p.x - w*0.5f, x1 = p.x + w*0.5f;
     const float y0 = p.y - h*0.5f, y1 = p.y + h*0.5f;
     const float z0 = p.z - d*0.5f, z1 = p.z + d*0.5f;
@@ -167,11 +167,11 @@ void DrawWorld(Texture2D concreteTexture, Mesh terrainMesh, Material terrainMate
 
     // Meteorological Station 04: separate wall sections leave a real doorway.
     DrawCube({0.0f, 0.12f, 31.0f}, 13.0f, 0.24f, 8.0f, Color{70, 72, 66, 255});
-    DrawCubeTexture(concreteTexture, {0.0f, 2.15f, 35.0f}, 13.0f, 4.3f, 0.35f, WHITE);
-    DrawCubeTexture(concreteTexture, {-6.5f, 2.15f, 31.0f}, 0.35f, 4.3f, 8.0f, WHITE);
-    DrawCubeTexture(concreteTexture, {6.5f, 2.15f, 31.0f}, 0.35f, 4.3f, 8.0f, WHITE);
-    DrawCubeTexture(concreteTexture, {-3.8f, 2.15f, 27.0f}, 5.4f, 4.3f, 0.35f, WHITE);
-    DrawCubeTexture(concreteTexture, {3.8f, 2.15f, 27.0f}, 5.4f, 4.3f, 0.35f, WHITE);
+    DrawStationTexturedCube(concreteTexture, {0.0f, 2.15f, 35.0f}, 13.0f, 4.3f, 0.35f, WHITE);
+    DrawStationTexturedCube(concreteTexture, {-6.5f, 2.15f, 31.0f}, 0.35f, 4.3f, 8.0f, WHITE);
+    DrawStationTexturedCube(concreteTexture, {6.5f, 2.15f, 31.0f}, 0.35f, 4.3f, 8.0f, WHITE);
+    DrawStationTexturedCube(concreteTexture, {-3.8f, 2.15f, 27.0f}, 5.4f, 4.3f, 0.35f, WHITE);
+    DrawStationTexturedCube(concreteTexture, {3.8f, 2.15f, 27.0f}, 5.4f, 4.3f, 0.35f, WHITE);
     DrawCube({0.0f, 4.35f, 31.0f}, 13.8f, 0.35f, 8.7f, Color{43, 49, 48, 255});
     DrawCube({0.0f, 4.12f, 31.0f}, 13.2f, 0.12f, 8.2f, Color{76, 78, 70, 255});
 
