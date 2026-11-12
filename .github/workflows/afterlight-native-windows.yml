@@ -9,7 +9,7 @@ on:
       - ".github/workflows/afterlight-native-windows.yml"
   pull_request:
     branches:
-      - codex/afterlight-raylib
+      - codex/afterlight
     paths:
       - "afterlight-native/**"
       - ".github/workflows/afterlight-native-windows.yml"
