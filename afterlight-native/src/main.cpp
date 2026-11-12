@@ -9,6 +9,14 @@ namespace {
 constexpr int SCREEN_WIDTH = 1280;
 constexpr int SCREEN_HEIGHT = 720;
 constexpr float WORLD_LIMIT = 58.0f;
+constexpr float PLAYER_RADIUS = 0.38f;
+
+struct BoxCollider { float x, z, halfX, halfZ; };
+constexpr std::array<BoxCollider, 4> STATION_COLLIDERS{{
+    {0.0f, 35.0f, 6.5f, 0.35f}, {-6.5f, 31.0f, 0.35f, 4.0f},
+    {6.5f, 31.0f, 0.35f, 4.0f}, {-3.8f, 27.0f, 2.7f, 0.35f},
+    {3.8f, 27.0f, 2.7f, 0.35f}
+}};
 
 struct Pickup {
     Vector3 position;
@@ -33,61 +41,111 @@ float DistanceXZ(Vector3 a, Vector3 b) {
 }
 
 void DrawTree(float x, float z, float scale) {
-    const float trunkHeight = 2.6f * scale;
-    DrawCylinder({x, trunkHeight * 0.5f, z}, 0.18f * scale, 0.25f * scale,
-                 trunkHeight, 7, Color{92, 68, 48, 255});
-    DrawSphere({x, trunkHeight + 0.55f * scale, z}, 1.05f * scale,
-               Color{52, 91, 62, 255});
-    DrawSphere({x - 0.42f * scale, trunkHeight + 0.28f * scale, z + 0.12f * scale},
-               0.72f * scale, Color{61, 105, 68, 255});
-    DrawSphere({x + 0.40f * scale, trunkHeight + 0.30f * scale, z - 0.08f * scale},
-               0.76f * scale, Color{45, 82, 57, 255});
+    const float trunkHeight = 3.1f * scale;
+    DrawCylinder({x, trunkHeight * 0.5f, z}, 0.20f * scale, 0.15f * scale,
+                 trunkHeight, 9, Color{77, 65, 52, 255});
+    DrawCylinder({x, trunkHeight * 0.72f, z}, 0.12f * scale, 0.08f * scale,
+                 trunkHeight * 0.52f, 7, Color{91, 73, 55, 255});
+    DrawCylinder({x, trunkHeight + 0.75f * scale, z}, 0.0f, 1.22f * scale,
+                 2.25f * scale, 8, Color{43, 66, 51, 255});
+    DrawCylinder({x, trunkHeight + 1.45f * scale, z}, 0.0f, 0.92f * scale,
+                 1.85f * scale, 8, Color{54, 78, 57, 255});
+    DrawCylinder({x, trunkHeight + 2.02f * scale, z}, 0.0f, 0.58f * scale,
+                 1.25f * scale, 8, Color{66, 88, 62, 255});
+}
+
+void DrawRock(Vector3 p, float scale, Color tint) {
+    DrawSphere({p.x, p.y + 0.22f * scale, p.z}, 0.55f * scale, tint);
+    DrawSphere({p.x + 0.30f * scale, p.y + 0.16f * scale, p.z - 0.12f * scale},
+               0.36f * scale, Color{tint.r, tint.g, tint.b, 255});
 }
 
 void DrawWorld() {
-
-    // Distant ridgelines frame the valley without expensive terrain shaders.
-    for (int i = 0; i < 9; ++i) {
-        const float x = -52.0f + static_cast<float>(i) * 13.0f;
-        const float height = 13.0f + static_cast<float>((i * 7) % 5) * 2.0f;
-        DrawCube({x, height * 0.42f, 69.0f}, 17.0f, height, 18.0f,
-                 Color{91, 111, 105, 255});
-        DrawCube({x + 4.0f, height * 0.34f, -75.0f}, 19.0f, height * 0.8f, 20.0f,
-                 Color{102, 119, 111, 255});
+    // Muted overcast sky and layered distant ridges.
+    for (int i = 0; i < 11; ++i) {
+        const float x = -62.0f + static_cast<float>(i) * 12.4f;
+        const float h = 12.0f + static_cast<float>((i * 7) % 6) * 2.1f;
+        DrawCube({x, h * 0.42f, 73.0f}, 16.0f, h, 24.0f,
+                 Color{76, 91, 86, 255});
+        DrawCube({x + 3.0f, h * 0.37f, -79.0f}, 19.0f, h * 0.75f, 25.0f,
+                 Color{89, 101, 95, 255});
     }
 
-    DrawPlane({0.0f, 0.0f, 0.0f}, {150.0f, 150.0f}, Color{74, 91, 67, 255});
+    DrawPlane({0.0f, 0.0f, 0.0f}, {150.0f, 150.0f}, Color{83, 87, 68, 255});
 
-    // A pale service track leads from the forest to Station 04.
-    DrawCube({0.0f, 0.025f, 8.0f}, 5.4f, 0.05f, 100.0f,
-             Color{119, 111, 91, 255});
+    // Uneven gravel service road with darker shoulders.
+    DrawCube({0.0f, 0.012f, 8.0f}, 5.8f, 0.025f, 104.0f,
+             Color{91, 87, 73, 255});
+    DrawCube({0.0f, 0.027f, 8.0f}, 4.4f, 0.018f, 104.0f,
+             Color{111, 105, 88, 255});
+    for (int i = -12; i <= 12; ++i) {
+        const float z = static_cast<float>(i) * 4.0f;
+        DrawCube({static_cast<float>((i * 7) % 5) * 0.31f, 0.045f, z},
+                 0.10f, 0.018f, 0.42f, Color{137, 127, 105, 255});
+    }
 
-    // Forest is deliberately sparse and uses simple low-poly primitives.
-    for (int x = -5; x <= 5; ++x) {
-        for (int z = -5; z <= 5; ++z) {
+    // Forest edge. Tree placement is deterministic so collision and visuals match.
+    for (int x = -6; x <= 6; ++x) {
+        for (int z = -6; z <= 6; ++z) {
             if (std::abs(x) <= 1 || (z >= -2 && z <= 1 && x >= -3 && x <= 3)) continue;
-            const float px = static_cast<float>(x) * 9.0f + static_cast<float>((x * 13 + z * 5) % 3);
-            const float pz = static_cast<float>(z) * 9.0f + static_cast<float>((z * 11 + x * 3) % 3);
-            const float scale = 0.82f + static_cast<float>((x * x + z * z) % 4) * 0.09f;
+            const float px = static_cast<float>(x) * 8.6f + static_cast<float>((x * 13 + z * 5) % 3);
+            const float pz = static_cast<float>(z) * 8.6f + static_cast<float>((z * 11 + x * 3) % 3);
+            const float scale = 0.82f + static_cast<float>((x * x + z * z) % 4) * 0.10f;
             DrawTree(px, pz, scale);
         }
     }
 
-    // Meteorological Station 04.
-    DrawCube({0.0f, 2.1f, 31.0f}, 13.0f, 4.2f, 8.0f, Color{105, 111, 108, 255});
-    DrawCube({0.0f, 4.35f, 31.0f}, 13.8f, 0.35f, 8.7f, Color{54, 62, 61, 255});
-    DrawCube({-2.2f, 1.35f, 26.94f}, 1.5f, 2.7f, 0.12f, Color{46, 56, 56, 255});
-    DrawCube({2.3f, 2.4f, 26.90f}, 2.0f, 1.4f, 0.12f, Color{65, 105, 115, 255});
-    DrawCube({-4.5f, 5.0f, 31.0f}, 0.25f, 1.6f, 0.25f, Color{75, 80, 78, 255});
-    DrawCylinder({-4.5f, 6.1f, 31.0f}, 0.0f, 0.65f, 0.7f, 8, Color{145, 151, 145, 255});
+    // Brush, fallen timber and stones break up the empty terrain.
+    for (int i = 0; i < 34; ++i) {
+        const float x = static_cast<float>((i * 17) % 91 - 45);
+        const float z = static_cast<float>((i * 29) % 103 - 51);
+        if (std::abs(x) < 4.0f) continue;
+        DrawRock({x, 0.0f, z}, 0.45f + static_cast<float>(i % 4) * 0.18f,
+                 Color{91, 91, 81, 255});
+        if (i % 3 == 0) {
+            DrawCylinder({x + 1.1f, 0.19f, z + 0.5f}, 0.13f, 0.11f, 2.2f,
+                         7, Color{78, 61, 45, 255});
+        }
+    }
 
-    // Small pond and shoreline.
-    DrawCylinder({-24.0f, 0.04f, 23.0f}, 7.2f, 7.2f, 0.08f, 32,
-                 Color{61, 105, 119, 255});
-    DrawSphere({-30.0f, 0.16f, 19.0f}, 1.0f, Color{103, 105, 88, 255});
-    DrawSphere({-18.0f, 0.16f, 28.0f}, 1.3f, Color{103, 105, 88, 255});
+    // Meteorological Station 04: separate wall sections leave a real doorway.
+    DrawCube({0.0f, 0.12f, 31.0f}, 13.0f, 0.24f, 8.0f, Color{70, 72, 66, 255});
+    DrawCube({0.0f, 2.15f, 35.0f}, 13.0f, 4.3f, 0.35f, Color{104, 108, 101, 255});
+    DrawCube({-6.5f, 2.15f, 31.0f}, 0.35f, 4.3f, 8.0f, Color{98, 103, 96, 255});
+    DrawCube({6.5f, 2.15f, 31.0f}, 0.35f, 4.3f, 8.0f, Color{98, 103, 96, 255});
+    DrawCube({-3.8f, 2.15f, 27.0f}, 5.4f, 4.3f, 0.35f, Color{104, 108, 101, 255});
+    DrawCube({3.8f, 2.15f, 27.0f}, 5.4f, 4.3f, 0.35f, Color{104, 108, 101, 255});
+    DrawCube({0.0f, 4.35f, 31.0f}, 13.8f, 0.35f, 8.7f, Color{43, 49, 48, 255});
+    DrawCube({0.0f, 4.12f, 31.0f}, 13.2f, 0.12f, 8.2f, Color{76, 78, 70, 255});
+
+    // Windows, metal frames and warning markings.
+    for (float x : {-4.7f, 4.7f}) {
+        DrawCube({x, 2.45f, 26.79f}, 1.65f, 1.25f, 0.035f, Color{37, 55, 59, 255});
+        DrawCube({x, 2.45f, 26.75f}, 1.48f, 1.08f, 0.025f, Color{77, 111, 116, 255});
+        DrawCube({x, 2.45f, 26.72f}, 0.055f, 1.18f, 0.045f, Color{64, 69, 66, 255});
+        DrawCube({x, 2.45f, 26.72f}, 1.55f, 0.055f, 0.045f, Color{64, 69, 66, 255});
+    }
+    DrawCube({0.0f, 1.45f, 26.78f}, 1.75f, 2.85f, 0.16f, Color{49, 55, 52, 255});
+    DrawCube({0.0f, 1.45f, 26.67f}, 1.53f, 2.66f, 0.035f, Color{76, 78, 68, 255});
+    DrawSphere({0.58f, 1.45f, 26.58f}, 0.07f, Color{183, 157, 92, 255});
+    DrawCube({-4.8f, 5.0f, 31.0f}, 0.22f, 1.45f, 0.22f, Color{66, 72, 69, 255});
+    DrawCylinder({-4.8f, 5.9f, 31.0f}, 0.0f, 0.65f, 0.55f, 10, Color{133, 139, 130, 255});
+    DrawCube({0.0f, 3.45f, 26.72f}, 2.3f, 0.42f, 0.08f, Color{142, 111, 61, 255});
+    DrawText("STATION 04", 0, 0, 1, BLANK); // Keep all world labels in the 2D HUD.
+
+    // Antenna, cables and equipment silhouettes on the roof.
+    DrawCylinder({4.7f, 5.25f, 32.0f}, 0.06f, 0.06f, 2.0f, 7, Color{61, 68, 66, 255});
+    DrawCylinder({4.7f, 6.25f, 32.0f}, 0.0f, 0.48f, 0.52f, 8, Color{118, 124, 115, 255});
+
+    // Pond with rocky bank.
+    DrawCylinder({-24.0f, 0.025f, 23.0f}, 7.2f, 7.2f, 0.05f, 40,
+                 Color{48, 77, 83, 255});
+    for (int i = 0; i < 18; ++i) {
+        const float a = static_cast<float>(i) * 6.2831853f / 18.0f;
+        DrawRock({-24.0f + std::cos(a) * 7.5f, 0.0f, 23.0f + std::sin(a) * 7.5f},
+                 0.55f + static_cast<float>(i % 3) * 0.16f, Color{92, 92, 79, 255});
+    }
 }
-
 void SaveGame(const Player& player, const std::array<Pickup, 4>& pickups) {
     std::ofstream file("afterlight_save.txt", std::ios::trunc);
     if (!file) return;
@@ -137,7 +195,7 @@ int main() {
         player.pitch = std::clamp(player.pitch - mouse.y * 0.0022f, -1.35f, 1.35f);
 
         const Vector3 forward{std::sin(player.yaw), 0.0f, std::cos(player.yaw)};
-        const Vector3 right{std::cosf(player.yaw), 0.0f, -std::sinf(player.yaw)};
+        const Vector3 right{-std::cosf(player.yaw), 0.0f, std::sinf(player.yaw)};
         Vector3 movement{0.0f, 0.0f, 0.0f};
         if (IsKeyDown(KEY_W)) { movement.x += forward.x; movement.z += forward.z; }
         if (IsKeyDown(KEY_S)) { movement.x -= forward.x; movement.z -= forward.z; }
@@ -146,9 +204,29 @@ int main() {
 
         const float movementLength = std::sqrt(movement.x * movement.x + movement.z * movement.z);
         if (movementLength > 0.001f) {
-            const float speed = IsKeyDown(KEY_LEFT_SHIFT) ? 7.0f : 4.3f;
-            player.position.x += movement.x / movementLength * speed * dt;
-            player.position.z += movement.z / movementLength * speed * dt;
+            const float speed = IsKeyDown(KEY_LEFT_SHIFT) ? 6.2f : 3.8f;
+            const float stepX = movement.x / movementLength * speed * dt;
+            const float stepZ = movement.z / movementLength * speed * dt;
+            auto blocked = [&](float x, float z) {
+                for (const auto& box : STATION_COLLIDERS) {
+                    if (std::abs(x - box.x) < box.halfX + PLAYER_RADIUS &&
+                        std::abs(z - box.z) < box.halfZ + PLAYER_RADIUS) return true;
+                }
+                for (int tx = -6; tx <= 6; ++tx) {
+                    for (int tz = -6; tz <= 6; ++tz) {
+                        if (std::abs(tx) <= 1 || (tz >= -2 && tz <= 1 && tx >= -3 && tx <= 3)) continue;
+                        const float treeX = static_cast<float>(tx) * 8.6f + static_cast<float>((tx * 13 + tz * 5) % 3);
+                        const float treeZ = static_cast<float>(tz) * 8.6f + static_cast<float>((tz * 11 + tx * 3) % 3);
+                        const float dx = x - treeX;
+                        const float dz = z - treeZ;
+                        if (dx * dx + dz * dz < 0.62f * 0.62f) return true;
+                    }
+                }
+                return false;
+            };
+            // Resolve axes separately to allow sliding along walls.
+            if (!blocked(player.position.x + stepX, player.position.z)) player.position.x += stepX;
+            if (!blocked(player.position.x, player.position.z + stepZ)) player.position.z += stepZ;
         }
 
         if (IsKeyPressed(KEY_SPACE) && player.grounded) {
@@ -221,15 +299,14 @@ int main() {
         camera.projection = CAMERA_PERSPECTIVE;
 
         BeginDrawing();
-        ClearBackground(Color{133, 166, 180, 255});
+        ClearBackground(Color{112, 132, 137, 255});
         BeginMode3D(camera);
         DrawWorld();
 
         for (const auto& pickup : pickups) {
             if (!pickup.active) continue;
             const Color color = pickup.type == 0 ? Color{157, 111, 69, 255} : Color{133, 143, 149, 255};
-            DrawCube(pickup.position, 0.8f, 0.8f, 0.8f, color);
-            DrawCubeWires(pickup.position, 0.82f, 0.82f, 0.82f, Color{220, 220, 205, 255});
+            DrawRock(pickup.position, 0.72f, color);
         }
 
         EndMode3D();
