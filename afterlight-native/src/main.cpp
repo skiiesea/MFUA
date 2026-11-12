@@ -129,10 +129,10 @@ void DrawWorld(Texture2D concreteTexture, Mesh terrainMesh, Material terrainMate
                  Color{89, 101, 95, 255});
     }
 
-    DrawModel(terrainMesh, terrainMaterial, {0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
+    DrawMesh(terrainMesh, terrainMaterial, MatrixTranslate(0.0f, 0.0f, 0.0f));
 
     // Repeating gravel surface keeps detail visible instead of stretching one flat color.
-    DrawModel(roadMesh, roadMaterial, {0.0f, 0.035f, 8.0f}, 1.0f, WHITE);
+    DrawMesh(roadMesh, roadMaterial, MatrixTranslate(0.0f, 0.035f, 8.0f));
     DrawCube({-2.85f, 0.025f, 8.0f}, 0.42f, 0.035f, 104.0f, Color{62, 65, 55, 255});
     DrawCube({2.85f, 0.025f, 8.0f}, 0.42f, 0.035f, 104.0f, Color{62, 65, 55, 255});
     for (int i = -12; i <= 12; ++i) {
