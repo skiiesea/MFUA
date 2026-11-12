@@ -45,7 +45,6 @@ void DrawTree(float x, float z, float scale) {
 }
 
 void DrawWorld() {
-    ClearBackground(Color{133, 166, 180, 255});
 
     // Distant ridgelines frame the valley without expensive terrain shaders.
     for (int i = 0; i < 9; ++i) {
@@ -222,8 +221,9 @@ int main() {
         camera.projection = CAMERA_PERSPECTIVE;
 
         BeginDrawing();
-        DrawWorld();
+        ClearBackground(Color{133, 166, 180, 255});
         BeginMode3D(camera);
+        DrawWorld();
 
         for (const auto& pickup : pickups) {
             if (!pickup.active) continue;
