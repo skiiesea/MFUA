@@ -68,7 +68,24 @@ void DrawRock(Vector3 p, float scale, Color tint) {
                0.36f * scale, Color{tint.r, tint.g, tint.b, 255});
 }
 
-void DrawWorld() {
+Texture2D MakeNoiseTexture(Color tint, float scale, int offsetX, int offsetY) {
+    Image image = GenImagePerlinNoise(256, 256, offsetX, offsetY, scale);
+    ImageColorTint(&image, tint);
+    Texture2D texture = LoadTextureFromImage(image);
+    UnloadImage(image);
+    SetTextureWrap(texture, TEXTURE_WRAP_REPEAT);
+    SetTextureFilter(texture, TEXTURE_FILTER_BILINEAR);
+    return texture;
+}
+
+Mesh MakeTiledPlane(float width, float length, float repeatX, float repeatY) {
+    Mesh mesh = GenMeshPlane(width, length, 1, 1);
+    for (int i = 0; i < mesh.vertexCount * 2; ++i) mesh.texcoords[i] *= (i % 2 == 0) ? repeatX : repeatY;
+    UpdateMeshBuffer(mesh, 1, mesh.texcoords, mesh.vertexCount * 2 * static_cast<int>(sizeof(float)), 0);
+    return mesh;
+}
+
+void DrawWorld(Texture2D concreteTexture, Mesh terrainMesh, Material terrainMaterial, Mesh roadMesh, Material roadMaterial) {
     // Muted overcast sky and layered distant ridges.
     for (int i = 0; i < 11; ++i) {
         const float x = -62.0f + static_cast<float>(i) * 12.4f;
@@ -79,13 +96,12 @@ void DrawWorld() {
                  Color{89, 101, 95, 255});
     }
 
-    DrawPlane({0.0f, 0.0f, 0.0f}, {150.0f, 150.0f}, Color{83, 87, 68, 255});
+    DrawModel(terrainMesh, terrainMaterial, {0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
 
-    // Uneven gravel service road with darker shoulders.
-    DrawCube({0.0f, 0.012f, 8.0f}, 5.8f, 0.025f, 104.0f,
-             Color{91, 87, 73, 255});
-    DrawCube({0.0f, 0.027f, 8.0f}, 4.4f, 0.018f, 104.0f,
-             Color{111, 105, 88, 255});
+    // Repeating gravel surface keeps detail visible instead of stretching one flat color.
+    DrawModel(roadMesh, roadMaterial, {0.0f, 0.035f, 8.0f}, 1.0f, WHITE);
+    DrawCube({-2.85f, 0.025f, 8.0f}, 0.42f, 0.035f, 104.0f, Color{62, 65, 55, 255});
+    DrawCube({2.85f, 0.025f, 8.0f}, 0.42f, 0.035f, 104.0f, Color{62, 65, 55, 255});
     for (int i = -12; i <= 12; ++i) {
         const float z = static_cast<float>(i) * 4.0f;
         DrawCube({static_cast<float>((i * 7) % 5) * 0.31f, 0.045f, z},
@@ -118,11 +134,11 @@ void DrawWorld() {
 
     // Meteorological Station 04: separate wall sections leave a real doorway.
     DrawCube({0.0f, 0.12f, 31.0f}, 13.0f, 0.24f, 8.0f, Color{70, 72, 66, 255});
-    DrawCube({0.0f, 2.15f, 35.0f}, 13.0f, 4.3f, 0.35f, Color{104, 108, 101, 255});
-    DrawCube({-6.5f, 2.15f, 31.0f}, 0.35f, 4.3f, 8.0f, Color{98, 103, 96, 255});
-    DrawCube({6.5f, 2.15f, 31.0f}, 0.35f, 4.3f, 8.0f, Color{98, 103, 96, 255});
-    DrawCube({-3.8f, 2.15f, 27.0f}, 5.4f, 4.3f, 0.35f, Color{104, 108, 101, 255});
-    DrawCube({3.8f, 2.15f, 27.0f}, 5.4f, 4.3f, 0.35f, Color{104, 108, 101, 255});
+    DrawCubeTexture(concreteTexture, {0.0f, 2.15f, 35.0f}, 13.0f, 4.3f, 0.35f, WHITE);
+    DrawCubeTexture(concreteTexture, {-6.5f, 2.15f, 31.0f}, 0.35f, 4.3f, 8.0f, WHITE);
+    DrawCubeTexture(concreteTexture, {6.5f, 2.15f, 31.0f}, 0.35f, 4.3f, 8.0f, WHITE);
+    DrawCubeTexture(concreteTexture, {-3.8f, 2.15f, 27.0f}, 5.4f, 4.3f, 0.35f, WHITE);
+    DrawCubeTexture(concreteTexture, {3.8f, 2.15f, 27.0f}, 5.4f, 4.3f, 0.35f, WHITE);
     DrawCube({0.0f, 4.35f, 31.0f}, 13.8f, 0.35f, 8.7f, Color{43, 49, 48, 255});
     DrawCube({0.0f, 4.12f, 31.0f}, 13.2f, 0.12f, 8.2f, Color{76, 78, 70, 255});
 
@@ -192,6 +208,17 @@ int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "AFTERLIGHT");
     SetTargetFPS(30);
     SetExitKey(KEY_NULL);
+
+    // Lightweight procedural materials; no external asset packs required.
+    Texture2D terrainTexture = MakeNoiseTexture(Color{118, 119, 91, 255}, 0.075f, 11, 7);
+    Texture2D gravelTexture = MakeNoiseTexture(Color{137, 128, 109, 255}, 0.16f, 29, 13);
+    Texture2D concreteTexture = MakeNoiseTexture(Color{126, 130, 120, 255}, 0.11f, 43, 19);
+    Mesh terrainMesh = MakeTiledPlane(150.0f, 150.0f, 24.0f, 24.0f);
+    Mesh roadMesh = MakeTiledPlane(4.4f, 104.0f, 3.0f, 72.0f);
+    Material terrainMaterial = LoadMaterialDefault();
+    terrainMaterial.maps[MATERIAL_MAP_DIFFUSE].texture = terrainTexture;
+    Material roadMaterial = LoadMaterialDefault();
+    roadMaterial.maps[MATERIAL_MAP_DIFFUSE].texture = gravelTexture;
     DisableCursor();
 
     Player player;
@@ -407,15 +434,33 @@ int main() {
         const unsigned char skyG = static_cast<unsigned char>(47.0f + daylight * 85.0f);
         const unsigned char skyB = static_cast<unsigned char>(62.0f + daylight * 76.0f);
         BeginDrawing();
-        ClearBackground(Color{skyR, skyG, skyB, 255});
+        const Color skyTop{static_cast<unsigned char>(skyR * 0.72f), static_cast<unsigned char>(skyG * 0.76f), static_cast<unsigned char>(skyB * 0.84f), 255};
+        const Color skyHorizon{static_cast<unsigned char>(skyR * 1.10f), static_cast<unsigned char>(skyG * 1.06f), static_cast<unsigned char>(skyB * 0.94f), 255};
+        DrawRectangleGradientV(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, skyTop, skyHorizon);
         BeginMode3D(camera);
-        DrawWorld();
+        DrawWorld(concreteTexture, terrainMesh, terrainMaterial, roadMesh, roadMaterial);
         const float sunAngle = dayTime * 6.2831853f;
         const Vector3 sunPosition{std::cosf(sunAngle) * 48.0f,
                                   std::max(-4.0f, std::sinf(sunAngle) * 38.0f),
                                   player.position.z + 42.0f};
-        if (sunPosition.y > 0.0f)
+        if (sunPosition.y > 0.0f) {
             DrawSphere(sunPosition, 3.2f, Color{245, 220, 164, 255});
+            DrawSphere(sunPosition, 4.8f, Fade(Color{246, 210, 151, 255}, 0.12f));
+        } else {
+            const Vector3 moonPosition{-sunPosition.x, 25.0f, player.position.z + 38.0f};
+            DrawSphere(moonPosition, 2.1f, Color{187, 199, 205, 255});
+        }
+
+        // Low-cost grass detail adds texture and scale to the terrain.
+        for (int i = 0; i < 190; ++i) {
+            const float gx = static_cast<float>((i * 37) % 116 - 58);
+            const float gz = static_cast<float>((i * 61) % 116 - 58);
+            if (std::abs(gx) < 3.2f && std::abs(gz) < 53.0f) continue;
+            const float height = 0.18f + static_cast<float>(i % 5) * 0.045f;
+            const Color grass = (i % 3 == 0) ? Color{91, 104, 66, 255} : Color{69, 88, 59, 255};
+            DrawLine3D({gx, 0.03f, gz}, {gx - 0.08f, height, gz + 0.02f}, grass);
+            DrawLine3D({gx, 0.03f, gz}, {gx + 0.07f, height * 0.82f, gz - 0.04f}, grass);
+        }
 
         for (const auto& drop : rainDrops) {
             if (raining) {
@@ -439,9 +484,11 @@ int main() {
                 DrawSphere(pickup.position, 0.24f, Color{145, 48, 53, 255});
                 DrawSphere({pickup.position.x + 0.12f, pickup.position.y + 0.12f, pickup.position.z},
                            0.12f, Color{72, 105, 58, 255});
+            } else if (pickup.type == 0) {
+                DrawCylinder(pickup.position, 0.16f, 0.13f, 1.15f, 7, Color{103, 75, 49, 255});
+                DrawCylinder({pickup.position.x, pickup.position.y, pickup.position.z}, 0.14f, 0.14f, 0.035f, 7, Color{177, 139, 94, 255});
             } else {
-                const Color color = pickup.type == 0 ? Color{157, 111, 69, 255} : Color{133, 143, 149, 255};
-                DrawRock(pickup.position, 0.72f, color);
+                DrawRock(pickup.position, 0.72f, Color{133, 143, 149, 255});
             }
         }
 
@@ -511,6 +558,13 @@ int main() {
     }
 
     EnableCursor();
+    UnloadMaterial(terrainMaterial);
+    UnloadMaterial(roadMaterial);
+    UnloadMesh(terrainMesh);
+    UnloadMesh(roadMesh);
+    UnloadTexture(terrainTexture);
+    UnloadTexture(gravelTexture);
+    UnloadTexture(concreteTexture);
     CloseWindow();
     return 0;
 }
