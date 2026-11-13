@@ -2,6 +2,9 @@
 #include <concepts>
 #include <type_traits>
 #include <utility>
+#include <vector>
+#include <cmath>
+#include <stdexcept>
 
 template <typename Function>
 concept function_of_x = std::invocable<Function, double> && 
@@ -101,9 +104,65 @@ requires function_of_x<Function> {
 
 template <typename Function>
 double min_Fibonacci(double a, double b, double eps, Function f)
-requires function_of_x<Function>{
-    double fn = 50;
-    double y = a + fn / (fn + 2) * (b - a);
-    double z = a + b - y;
-    while ((b-a) / (fn + 2) < eps)
+requires function_of_x<Function> {
+    if (!std::isfinite(a) || !std::isfinite(b) ||
+        !std::isfinite(eps) || !(a < b) || !(eps > 0.0)) {
+        throw std::invalid_argument("min_Fibonacci: invalid interval or precision");
+    }
+
+    // Находим минимальный номер n, для которого F[n] >= 2 * (b - a) / eps.
+    // Множитель 2 гарантирует, что после последних шагов длина интервала
+    // будет не больше заданной точности.
+    const long double target =
+        2.0L * (static_cast<long double>(b) - a) / eps;
+
+    if (!std::isfinite(target)) {
+        throw std::overflow_error("min_Fibonacci: requested precision is too small");
+    }
+
+    std::vector<long double> fibonacci{0.0L, 1.0L};
+    while (fibonacci.back() < target) {
+        const long double next =
+            fibonacci[fibonacci.size() - 1] + fibonacci[fibonacci.size() - 2];
+
+        if (!std::isfinite(next)) {
+            throw std::overflow_error("min_Fibonacci: Fibonacci sequence overflow");
+        }
+
+        fibonacci.push_back(next);
+    }
+
+    std::size_t n = fibonacci.size() - 1;
+
+    // При уже достаточной точности достаточно вернуть середину отрезка.
+    if (n <= 3) {
+        return (a + b) / 2.0;
+    }
+
+    double y = a + static_cast<double>(fibonacci[n - 2] / fibonacci[n]) * (b - a);
+    double z = a + static_cast<double>(fibonacci[n - 1] / fibonacci[n]) * (b - a);
+    double fy = f(y);
+    double fz = f(z);
+
+    while (n > 3) {
+        if (fy > fz) {
+            a = y;
+            y = z;
+            fy = fz;
+
+            --n;
+            z = a + static_cast<double>(fibonacci[n - 1] / fibonacci[n]) * (b - a);
+            fz = f(z);
+        } else {
+            b = z;
+            z = y;
+            fz = fy;
+
+            --n;
+            y = a + static_cast<double>(fibonacci[n - 2] / fibonacci[n]) * (b - a);
+            fy = f(y);
+        }
+    }
+
+    return (a + b) / 2.0;
 }
