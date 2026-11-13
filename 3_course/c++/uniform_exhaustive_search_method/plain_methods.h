@@ -21,18 +21,29 @@ requires function_of_x<Function> {
 template <typename Function>
 double min_local(double a, double b, double eps, Function f) 
 requires function_of_x<Function> {
-    if (b - a < 2 * eps) return (a + b) / 2.0;
-    double xprev = a, fprev = f(xprev);
-    double step = (b - a) / 10.0;
-    double xcurrent = xprev + step, fcurrent = f(xcurrent);
-    double xnext = xcurrent + step, fnext = f(xnext);
-    while (fnext < fcurrent) {
-        xprev = xcurrent;
-        xcurrent = std::exchange(xnext, xnext + step);
-        fprev = std::exchange(fcurrent, fnext);
-        fnext = f(xnext);
+    double step = (b - a) / 1000.0;
+    double x_min = a;
+
+    for (double x = a; x <= b; x += step) {
+        if (f(x) < f(x_min)) x_min = x;
     }
-    return min_local(xprev, xnext, eps, f);
+
+    double left = (x_min - step > a) ? x_min - step : a;
+    double right = (x_min + step < b) ? x_min + step : b;
+
+    while (right - left > 2 * eps) {
+        step = (right - left) / 10.0;
+        x_min = left;
+
+        for (double x = left; x <= right; x += step) {
+            if (f(x) < f(x_min)) x_min = x;
+        }
+
+        left = (x_min - step > a) ? x_min - step : a;
+        right = (x_min + step < b) ? x_min + step : b;
+    }
+
+    return x_min;
 }
 
 template <typename Function>
