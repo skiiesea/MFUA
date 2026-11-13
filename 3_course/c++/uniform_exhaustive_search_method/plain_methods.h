@@ -97,3 +97,13 @@ requires function_of_x<Function> {
     }
     return fy < fz ? y : z;
 }
+
+
+template <typename Function>
+double min_Fibonacci(double a, double b, double eps, Function f)
+requires function_of_x<Function>{
+    double fn = 50;
+    double y = a + fn / (fn + 2) * (b - a);
+    double z = a + b - y;
+    while ((b-a) / (fn + 2) < eps)
+}
