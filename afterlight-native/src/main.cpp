@@ -376,8 +376,7 @@ int main() {
         player.pitch = std::clamp(player.pitch - mouse.y * 0.0022f, -1.35f, 1.35f);
 
         const Vector3 forward{std::sin(player.yaw), 0.0f, std::cos(player.yaw)};
-        // At yaw 0 the camera faces +Z, so screen-right is +X (D), not -X (A).
-        const Vector3 right{std::cosf(player.yaw), 0.0f, -std::sinf(player.yaw)};
+                const Vector3 right{-std::cosf(player.yaw), 0.0f, std::sinf(player.yaw)};
         Vector3 movement{0.0f, 0.0f, 0.0f};
         if (IsKeyDown(KEY_W)) { movement.x += forward.x; movement.z += forward.z; }
         if (IsKeyDown(KEY_S)) { movement.x -= forward.x; movement.z -= forward.z; }
