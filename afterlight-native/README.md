@@ -9,9 +9,10 @@ This is the only actively developed AFTERLIGHT game: a native C++17 / raylib Win
 - Forest valley, service road, pond and Meteorological Station 04, with procedural tiled terrain/gravel/concrete textures, denser ground detail and atmospheric sky gradient.
 - Field inventory with wood, stone and wild berries.
 - Survival needs: health, hunger, thirst and sprint stamina.
-- Resource gathering, berry consumption, pond water interaction and campfire crafting.
+- Resource gathering, raw berry consumption, pond water interaction and campfire crafting.
+- Campfire cooking loop: use E near a placed campfire to cook gathered berries; press 2 to eat cooked food for a larger hunger recovery and a small health recovery.
 - Dynamic day/night cycle and periodic rain.
-- Versioned local save/load: F5 saves; F9 starts a fresh run.
+- Versioned local save/load: F5 saves; F9 starts a fresh run. Version 3 stores cooked food and camera pitch, validates loaded values, and still reads existing version 2 saves.
 - Target profile: 1280×720, 30 FPS cap, low-cost primitive geometry.
 
 This is an early playable foundation, not the finished survival game. Advanced crafting, building, story events, spatial audio, high-quality texture assets and expanded locations remain future work.
@@ -39,10 +40,11 @@ The GitHub Actions workflow `.github/workflows/afterlight-native-windows.yml` bu
 | Mouse | Look |
 | Left Shift | Sprint |
 | Space | Jump |
-| E | Collect nearby resource |
+| E | Collect nearby resource / cook berries at campfire |
 | F | Drink at pond / inspect station |
 | I | Toggle inventory |
-| 1 | Eat berries |
+| 1 | Eat raw berries |
+| 2 | Eat cooked berries |
 | C | Craft and place campfire (3 wood + 2 stone) |
 | F5 | Save |
 | F9 | Start a fresh run |
