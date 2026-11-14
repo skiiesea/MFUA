@@ -36,6 +36,7 @@ struct Player {
     int wood = 0;
     int stone = 0;
     int berries = 0;
+    int cookedBerries = 0;
     float health = 100.0f;
     float hunger = 100.0f;
     float thirst = 100.0f;
@@ -226,9 +227,10 @@ void DrawWorld(Texture2D concreteTexture, Mesh terrainMesh, Material terrainMate
 void SaveGame(const Player& player, const std::array<Pickup, 8>& pickups) {
     std::ofstream file("afterlight_save.txt", std::ios::trunc);
     if (!file) return;
-    file << "AFTERLIGHT2\n"
+    file << "AFTERLIGHT3\n"
          << player.position.x << ' ' << player.position.y << ' ' << player.position.z << ' '
-         << player.yaw << ' ' << player.wood << ' ' << player.stone << ' ' << player.berries << ' '
+         << player.yaw << ' ' << player.pitch << ' '
+         << player.wood << ' ' << player.stone << ' ' << player.berries << ' ' << player.cookedBerries << ' '
          << player.health << ' ' << player.hunger << ' ' << player.thirst << ' ' << player.stamina << ' '
          << (player.campfirePlaced ? 1 : 0) << ' '
          << player.campfirePosition.x << ' ' << player.campfirePosition.y << ' '
@@ -239,22 +241,65 @@ void SaveGame(const Player& player, const std::array<Pickup, 8>& pickups) {
 void LoadGame(Player& player, std::array<Pickup, 8>& pickups) {
     std::ifstream file("afterlight_save.txt");
     if (!file) return;
+
     std::string version;
     file >> version;
-    if (version != "AFTERLIGHT2") return;
+    const bool legacySave = version == "AFTERLIGHT2";
+    if (!legacySave && version != "AFTERLIGHT3") return;
+
+    Player loaded;
     int campfire = 0;
-    file >> player.position.x >> player.position.y >> player.position.z
-         >> player.yaw >> player.wood >> player.stone >> player.berries
-         >> player.health >> player.hunger >> player.thirst >> player.stamina
-         >> campfire >> player.campfirePosition.x >> player.campfirePosition.y
-         >> player.campfirePosition.z;
-    if (!file) { player = Player{}; return; }
-    player.campfirePlaced = campfire != 0;
-    for (auto& pickup : pickups) {
-        int active = 1;
-        if (file >> active) pickup.active = active != 0;
+    if (legacySave) {
+        file >> loaded.position.x >> loaded.position.y >> loaded.position.z
+             >> loaded.yaw >> loaded.wood >> loaded.stone >> loaded.berries
+             >> loaded.health >> loaded.hunger >> loaded.thirst >> loaded.stamina
+             >> campfire >> loaded.campfirePosition.x >> loaded.campfirePosition.y
+             >> loaded.campfirePosition.z;
+    } else {
+        file >> loaded.position.x >> loaded.position.y >> loaded.position.z
+             >> loaded.yaw >> loaded.pitch
+             >> loaded.wood >> loaded.stone >> loaded.berries >> loaded.cookedBerries
+             >> loaded.health >> loaded.hunger >> loaded.thirst >> loaded.stamina
+             >> campfire >> loaded.campfirePosition.x >> loaded.campfirePosition.y
+             >> loaded.campfirePosition.z;
     }
-    player.position.y = 1.8f;
+    if (!file) return;
+
+    const auto finite = [](float value) { return std::isfinite(value); };
+    if (!finite(loaded.position.x) || !finite(loaded.position.z) ||
+        !finite(loaded.yaw) || !finite(loaded.pitch) ||
+        !finite(loaded.health) || !finite(loaded.hunger) ||
+        !finite(loaded.thirst) || !finite(loaded.stamina) ||
+        !finite(loaded.campfirePosition.x) || !finite(loaded.campfirePosition.y) ||
+        !finite(loaded.campfirePosition.z) ||
+        std::abs(loaded.position.x) > WORLD_LIMIT || std::abs(loaded.position.z) > WORLD_LIMIT ||
+        loaded.pitch < -1.35f || loaded.pitch > 1.35f ||
+        loaded.wood < 0 || loaded.wood > 999 ||
+        loaded.stone < 0 || loaded.stone > 999 ||
+        loaded.berries < 0 || loaded.berries > 999 ||
+        loaded.cookedBerries < 0 || loaded.cookedBerries > 999 ||
+        loaded.health < 0.0f || loaded.health > 100.0f ||
+        loaded.hunger < 0.0f || loaded.hunger > 100.0f ||
+        loaded.thirst < 0.0f || loaded.thirst > 100.0f ||
+        loaded.stamina < 0.0f || loaded.stamina > 100.0f ||
+        (campfire != 0 && campfire != 1) ||
+        std::abs(loaded.campfirePosition.x) > WORLD_LIMIT ||
+        std::abs(loaded.campfirePosition.z) > WORLD_LIMIT) return;
+
+    std::array<bool, 8> activePickups{};
+    for (auto& active : activePickups) {
+        int value = 0;
+        if (!(file >> value) || (value != 0 && value != 1)) return;
+        active = value != 0;
+    }
+
+    loaded.campfirePlaced = campfire != 0;
+    loaded.position.y = 1.8f;
+    loaded.verticalVelocity = 0.0f;
+    loaded.grounded = true;
+    player = loaded;
+    for (std::size_t i = 0; i < pickups.size(); ++i)
+        pickups[i].active = activePickups[i];
 }
 
 } // namespace
@@ -331,7 +376,7 @@ int main() {
         player.pitch = std::clamp(player.pitch - mouse.y * 0.0022f, -1.35f, 1.35f);
 
         const Vector3 forward{std::sin(player.yaw), 0.0f, std::cos(player.yaw)};
-        const Vector3 right{-std::cosf(player.yaw), 0.0f, std::sinf(player.yaw)};
+        // At yaw 0 the camera faces +Z, so screen-right is +X (D), not -X (A).\n        const Vector3 right{std::cosf(player.yaw), 0.0f, -std::sinf(player.yaw)};
         Vector3 movement{0.0f, 0.0f, 0.0f};
         if (IsKeyDown(KEY_W)) { movement.x += forward.x; movement.z += forward.z; }
         if (IsKeyDown(KEY_S)) { movement.x -= forward.x; movement.z -= forward.z; }
@@ -402,29 +447,52 @@ int main() {
             }
         }
 
-        if (nearestPickup >= 0 && IsKeyPressed(KEY_E)) {
-            auto& pickup = pickups[static_cast<std::size_t>(nearestPickup)];
-            pickup.active = false;
-            if (pickup.type == 0) ++player.wood;
-            else if (pickup.type == 1) ++player.stone;
-            else ++player.berries;
-            statusMessage = pickup.type == 2 ? "Wild berries collected" : "Resource collected";
-            messageTimer = 2.0f;
-            SaveGame(player, pickups);
+        if (IsKeyPressed(KEY_E)) {
+            const bool nearCampfire = player.campfirePlaced &&
+                DistanceXZ(player.position, player.campfirePosition) < 2.6f;
+            if (nearCampfire && player.berries > 0) {
+                --player.berries;
+                ++player.cookedBerries;
+                statusMessage = "Berries cooked at campfire";
+                messageTimer = 2.0f;
+                SaveGame(player, pickups);
+            } else if (nearestPickup >= 0) {
+                auto& pickup = pickups[static_cast<std::size_t>(nearestPickup)];
+                pickup.active = false;
+                if (pickup.type == 0) ++player.wood;
+                else if (pickup.type == 1) ++player.stone;
+                else ++player.berries;
+                statusMessage = pickup.type == 2 ? "Wild berries collected" : "Resource collected";
+                messageTimer = 2.0f;
+                SaveGame(player, pickups);
+            } else if (nearCampfire) {
+                statusMessage = "Collect wild berries before cooking";
+                messageTimer = 2.0f;
+            }
         }
 
         if (IsKeyPressed(KEY_I)) showInventory = !showInventory;
         if (IsKeyPressed(KEY_ONE) && player.berries > 0) {
             --player.berries;
             player.hunger = std::min(100.0f, player.hunger + 24.0f);
-            statusMessage = "Berries eaten";
+            statusMessage = "Wild berries eaten";
             messageTimer = 2.0f;
+            SaveGame(player, pickups);
+        }
+        if (IsKeyPressed(KEY_TWO) && player.cookedBerries > 0) {
+            --player.cookedBerries;
+            player.hunger = std::min(100.0f, player.hunger + 42.0f);
+            player.health = std::min(100.0f, player.health + 4.0f);
+            statusMessage = "Cooked berries eaten";
+            messageTimer = 2.0f;
+            SaveGame(player, pickups);
         }
         if (IsKeyPressed(KEY_F)) {
             if (DistanceXZ(player.position, {-24.0f, 0.0f, 23.0f}) < 10.0f) {
                 player.thirst = std::min(100.0f, player.thirst + 38.0f);
                 statusMessage = "Fresh water collected";
                 messageTimer = 2.0f;
+                SaveGame(player, pickups);
             } else if (DistanceXZ(player.position, {0.0f, 0.0f, 31.0f}) < 7.0f) {
                 statusMessage = "STATION 04: investigate the abandoned equipment";
                 messageTimer = 3.0f;
@@ -441,6 +509,7 @@ int main() {
                     player.position.z + std::cos(player.yaw) * 2.0f
                 };
                 statusMessage = "Campfire crafted and placed";
+                SaveGame(player, pickups);
             } else if (player.campfirePlaced) {
                 statusMessage = "You already have a campfire";
             } else {
@@ -552,7 +621,8 @@ int main() {
 
         DrawRectangle(18, 18, 286, 112, Fade(Color{14, 20, 20, 255}, 0.82f));
         DrawText("AFTERLIGHT", 32, 27, 23, RAYWHITE);
-        DrawText(TextFormat("WOOD %02i  STONE %02i  BERRIES %02i", player.wood, player.stone, player.berries),
+        DrawText(TextFormat("W %02i  S %02i  B %02i  COOKED %02i",
+                 player.wood, player.stone, player.berries, player.cookedBerries),
                  32, 58, 14, Color{218, 207, 184, 255});
         const auto drawBar = [](int x, int y, const char* label, float value, Color color) {
             DrawText(label, x, y - 1, 12, RAYWHITE);
@@ -572,20 +642,24 @@ int main() {
                  SCREEN_HEIGHT / 2 + 8, Fade(RAYWHITE, 0.85f));
 
         if (showInventory) {
-            DrawRectangle(SCREEN_WIDTH - 292, 72, 270, 178, Fade(Color{12, 18, 18, 255}, 0.90f));
-            DrawRectangleLines(SCREEN_WIDTH - 292, 72, 270, 178, Color{111, 128, 117, 255});
+            DrawRectangle(SCREEN_WIDTH - 292, 72, 270, 224, Fade(Color{12, 18, 18, 255}, 0.90f));
+            DrawRectangleLines(SCREEN_WIDTH - 292, 72, 270, 224, Color{111, 128, 117, 255});
             DrawText("FIELD INVENTORY", SCREEN_WIDTH - 270, 88, 19, RAYWHITE);
             DrawText(TextFormat("Wood       %02i", player.wood), SCREEN_WIDTH - 270, 123, 16, Color{211, 177, 128, 255});
             DrawText(TextFormat("Stone      %02i", player.stone), SCREEN_WIDTH - 270, 148, 16, Color{180, 190, 194, 255});
             DrawText(TextFormat("Berries    %02i", player.berries), SCREEN_WIDTH - 270, 173, 16, Color{191, 105, 105, 255});
-            DrawText("1  Eat berries (+food)", SCREEN_WIDTH - 270, 211, 13, RAYWHITE);
-            DrawText("C  Craft campfire: 3W + 2S", SCREEN_WIDTH - 270, 230, 12, Color{211, 202, 178, 255});
+            DrawText(TextFormat("Cooked     %02i", player.cookedBerries), SCREEN_WIDTH - 270, 198, 16, Color{216, 157, 91, 255});
+            DrawText("1 Eat berries   2 Eat cooked food", SCREEN_WIDTH - 270, 231, 12, RAYWHITE);
+            DrawText("E Cook at fire   C Craft fire: 3W + 2S", SCREEN_WIDTH - 270, 263, 11, Color{211, 202, 178, 255});
         }
 
-        if (nearestPickup >= 0) {
-            DrawRectangle(SCREEN_WIDTH / 2 - 105, SCREEN_HEIGHT / 2 + 28, 210, 34,
+        const bool nearCampfirePrompt = player.campfirePlaced &&
+            DistanceXZ(player.position, player.campfirePosition) < 2.6f;
+        if (nearestPickup >= 0 || nearCampfirePrompt) {
+            const char* prompt = nearCampfirePrompt ? "E  -  COOK WILD BERRIES" : "E  -  PICK UP RESOURCE";
+            DrawRectangle(SCREEN_WIDTH / 2 - 128, SCREEN_HEIGHT / 2 + 28, 256, 34,
                           Fade(Color{12, 18, 18, 255}, 0.82f));
-            DrawText("E  -  PICK UP RESOURCE", SCREEN_WIDTH / 2 - 91,
+            DrawText(prompt, SCREEN_WIDTH / 2 - MeasureText(prompt, 16) / 2,
                      SCREEN_HEIGHT / 2 + 37, 16, RAYWHITE);
         }
 
@@ -596,11 +670,12 @@ int main() {
                  SCREEN_WIDTH - 250, 24, 18, Color{228, 224, 203, 255});
 
         if (showHelp) {
-            DrawRectangle(18, SCREEN_HEIGHT - 144, 355, 126, Fade(Color{14, 20, 20, 255}, 0.78f));
-            DrawText("WASD  Move     SHIFT  Sprint", 32, SCREEN_HEIGHT - 130, 16, RAYWHITE);
-            DrawText("SPACE Jump  E Collect  F Interact", 32, SCREEN_HEIGHT - 104, 15, RAYWHITE);
-            DrawText("I Inventory  1 Eat berries  C Craft fire", 32, SCREEN_HEIGHT - 78, 14, RAYWHITE);
-            DrawText("F5 Save  F9 New run  H Help  ESC Mouse", 32, SCREEN_HEIGHT - 52, 13, Color{185, 195, 190, 255});
+            DrawRectangle(18, SCREEN_HEIGHT - 160, 390, 142, Fade(Color{14, 20, 20, 255}, 0.78f));
+            DrawText("WASD Move   SHIFT Sprint   SPACE Jump", 32, SCREEN_HEIGHT - 146, 15, RAYWHITE);
+            DrawText("E Collect / cook berries at campfire", 32, SCREEN_HEIGHT - 120, 14, RAYWHITE);
+            DrawText("F Water / station   I Inventory   1 / 2 Eat", 32, SCREEN_HEIGHT - 94, 13, RAYWHITE);
+            DrawText("C Campfire   F5 Save   F9 New   H Help", 32, SCREEN_HEIGHT - 68, 13, RAYWHITE);
+            DrawText("ESC Release mouse", 32, SCREEN_HEIGHT - 42, 12, Color{185, 195, 190, 255});
         }
 
         if (messageTimer > 0.0f) {
