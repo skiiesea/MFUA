@@ -12,7 +12,8 @@ This is the only actively developed AFTERLIGHT game: a native C++17 / raylib Win
 - Resource gathering, raw berry consumption, pond water interaction and campfire crafting.
 - Campfire cooking loop: use E near a placed campfire to cook gathered berries; press 2 to eat cooked food for a larger hunger recovery and a small health recovery.
 - Dynamic day/night cycle and periodic rain.
-- Versioned local save/load: F5 saves; F9 starts a fresh run. Version 3 stores cooked food and camera pitch, validates loaded values, and still reads existing version 2 saves.
+- Versioned local save/load: F5 saves; F9 starts a fresh run. Version 4 stores cooked food, camera pitch and the discovered radio log, validates loaded values, and still reads existing version 2 and 3 saves.
+- Station 04 radio receiver: enter the station and press F near the desk to discover a short story clue. The signal log stays recorded after saving and loading.
 - Target profile: 1280×720, 30 FPS cap, low-cost primitive geometry.
 
 This is an early playable foundation, not the finished survival game. Advanced crafting, building, story events, spatial audio, high-quality texture assets and expanded locations remain future work.
@@ -41,7 +42,7 @@ The GitHub Actions workflow `.github/workflows/afterlight-native-windows.yml` bu
 | Left Shift | Sprint |
 | Space | Jump |
 | E | Collect nearby resource / cook berries at campfire |
-| F | Drink at pond / inspect station |
+| F | Drink at pond / listen to the receiver inside Station 04 |
 | I | Toggle inventory |
 | 1 | Eat raw berries |
 | 2 | Eat cooked berries |
