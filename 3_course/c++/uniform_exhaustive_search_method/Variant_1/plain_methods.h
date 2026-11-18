@@ -112,6 +112,8 @@ double min_golden_ration(double a, double b, double eps, Function f, int& iterat
 template <typename Function>
 double min_Fibonacci(double a, double b, double eps, Function f, int& iterations) {
     iterations = 0;
+    if (b - a <= eps) return (f(a) <= f(b)) ? a : b;
+
     double start_a = a;
     double start_b = b;
     std::vector<unsigned long long> fib(2, 1);
