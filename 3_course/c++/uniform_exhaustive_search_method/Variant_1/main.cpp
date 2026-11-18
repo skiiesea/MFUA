@@ -1,83 +1,86 @@
 #include <iostream>
 #include <iomanip>
-#include <fstream>
 #include "functions.h"
 #include "plain_methods.h"
 
-const double EPS = 1e-6;
-const double GRAPH_EPS = 1e-2;
-
-typedef double (*Function)(double);
-
-struct TestFunction {
-    int number;
-    Function f;
-    double a;
-    double b;
-    double graph_left;
-    double graph_right;
-};
-
 int main() {
-    TestFunction functions[] = {
-        {9, foo9, 1.5707963267948966, 4.71238898038469, 2.141592653589793, 4.141592653589793},
-        {14, foo14, -4.0, 0.0, -4.0, -2.0},
-        {16, foo16, -1.0, 1.0, -1.0, 0.0},
-        {19, foo19, -1.0, 1.0, -1.0, 1.0},
-        {27, foo27, -4.0, 0.0, -4.0, 0.0},
-        {50, foo50, -2.0, 0.0, -2.0, -1.2}
-    };
+    const double eps = 0.000001;
+    int n;
+    double x;
 
     std::cout << std::fixed << std::setprecision(8);
-    std::cout << "Variant 1, epsilon = " << EPS << "\n\n";
 
-    for (const auto& item : functions) {
-        int n = 0;
-        double x;
-        std::cout << "Function #" << item.number << " on [" << item.a << "; " << item.b << "]\n";
+    std::cout << "Function 9: cos(x)\n";
+    x = min_uniform_search(1.5707963, 4.7123890, eps, foo9, n);
+    std::cout << "Uniform: " << x << "  iterations: " << n << '\n';
+    x = min_local(1.5707963, 4.7123890, eps, foo9, n);
+    std::cout << "Localization: " << x << "  iterations: " << n << '\n';
+    x = min_dihotomia(1.5707963, 4.7123890, eps, foo9, n);
+    std::cout << "Dichotomy: " << x << "  iterations: " << n << '\n';
+    x = min_golden_ration(1.5707963, 4.7123890, eps, foo9, n);
+    std::cout << "Golden ratio: " << x << "  iterations: " << n << '\n';
+    x = min_Fibonacci(1.5707963, 4.7123890, eps, foo9, n);
+    std::cout << "Fibonacci: " << x << "  iterations: " << n << "\n\n";
 
-        x = min_uniform_search(item.a, item.b, EPS, item.f, n);
-        std::cout << "Uniform:       x = " << x << "  f(x) = " << item.f(x) << "  n = " << n << '\n';
-        x = min_local(item.a, item.b, EPS, item.f, n);
-        std::cout << "Localization:  x = " << x << "  f(x) = " << item.f(x) << "  n = " << n << '\n';
-        x = min_dihotomia(item.a, item.b, EPS, item.f, n);
-        std::cout << "Dichotomy:     x = " << x << "  f(x) = " << item.f(x) << "  n = " << n << '\n';
-        x = min_golden_ration(item.a, item.b, EPS, item.f, n);
-        std::cout << "Golden ratio:  x = " << x << "  f(x) = " << item.f(x) << "  n = " << n << '\n';
-        x = min_Fibonacci(item.a, item.b, EPS, item.f, n);
-        std::cout << "Fibonacci:     x = " << x << "  f(x) = " << item.f(x) << "  n = " << n << "\n\n";
-    }
+    std::cout << "Function 14: x^5 - 5*x^3\n";
+    x = min_uniform_search(-4, 0, eps, foo14, n);
+    std::cout << "Uniform: " << x << "  iterations: " << n << '\n';
+    x = min_local(-4, 0, eps, foo14, n);
+    std::cout << "Localization: " << x << "  iterations: " << n << '\n';
+    x = min_dihotomia(-4, 0, eps, foo14, n);
+    std::cout << "Dichotomy: " << x << "  iterations: " << n << '\n';
+    x = min_golden_ration(-4, 0, eps, foo14, n);
+    std::cout << "Golden ratio: " << x << "  iterations: " << n << '\n';
+    x = min_Fibonacci(-4, 0, eps, foo14, n);
+    std::cout << "Fibonacci: " << x << "  iterations: " << n << "\n\n";
 
-    std::ofstream csv("iterations.csv");
-    csv << "function,method,h,iterations\n";
-    const char* methods[] = {"Uniform", "Localization", "Dichotomy", "Golden ratio", "Fibonacci"};
+    std::cout << "Function 16: x^6 - 5*x^2\n";
+    x = min_uniform_search(-1, 1, eps, foo16, n);
+    std::cout << "Uniform: " << x << "  iterations: " << n << '\n';
+    x = min_local(-1, 1, eps, foo16, n);
+    std::cout << "Localization: " << x << "  iterations: " << n << '\n';
+    x = min_dihotomia(-1, 1, eps, foo16, n);
+    std::cout << "Dichotomy: " << x << "  iterations: " << n << '\n';
+    x = min_golden_ration(-1, 1, eps, foo16, n);
+    std::cout << "Golden ratio: " << x << "  iterations: " << n << '\n';
+    x = min_Fibonacci(-1, 1, eps, foo16, n);
+    std::cout << "Fibonacci: " << x << "  iterations: " << n << "\n\n";
 
-    for (const auto& item : functions) {
-        for (int j = 1; j <= 8; j++) {
-            double h = (item.graph_right - item.graph_left) * j / 8.0;
-            double a = item.graph_left;
-            double b = item.graph_right;
-            if (item.number == 9) {
-                a = 3.141592653589793 - h / 2.0;
-                b = 3.141592653589793 + h / 2.0;
-            } else {
-                b = a + h;
-            }
+    std::cout << "Function 19: x^3 + 9*x\n";
+    x = min_uniform_search(-1, 1, eps, foo19, n);
+    std::cout << "Uniform: " << x << "  iterations: " << n << '\n';
+    x = min_local(-1, 1, eps, foo19, n);
+    std::cout << "Localization: " << x << "  iterations: " << n << '\n';
+    x = min_dihotomia(-1, 1, eps, foo19, n);
+    std::cout << "Dichotomy: " << x << "  iterations: " << n << '\n';
+    x = min_golden_ration(-1, 1, eps, foo19, n);
+    std::cout << "Golden ratio: " << x << "  iterations: " << n << '\n';
+    x = min_Fibonacci(-1, 1, eps, foo19, n);
+    std::cout << "Fibonacci: " << x << "  iterations: " << n << "\n\n";
 
-            int n = 0;
-            min_uniform_search(a, b, GRAPH_EPS, item.f, n);
-            csv << item.number << ',' << methods[0] << ',' << h << ',' << n << '\n';
-            min_local(a, b, GRAPH_EPS, item.f, n);
-            csv << item.number << ',' << methods[1] << ',' << h << ',' << n << '\n';
-            min_dihotomia(a, b, GRAPH_EPS, item.f, n);
-            csv << item.number << ',' << methods[2] << ',' << h << ',' << n << '\n';
-            min_golden_ration(a, b, GRAPH_EPS, item.f, n);
-            csv << item.number << ',' << methods[3] << ',' << h << ',' << n << '\n';
-            min_Fibonacci(a, b, GRAPH_EPS, item.f, n);
-            csv << item.number << ',' << methods[4] << ',' << h << ',' << n << '\n';
-        }
-    }
+    std::cout << "Function 27: 6*x^2 - 12*x\n";
+    x = min_uniform_search(-4, 0, eps, foo27, n);
+    std::cout << "Uniform: " << x << "  iterations: " << n << '\n';
+    x = min_local(-4, 0, eps, foo27, n);
+    std::cout << "Localization: " << x << "  iterations: " << n << '\n';
+    x = min_dihotomia(-4, 0, eps, foo27, n);
+    std::cout << "Dichotomy: " << x << "  iterations: " << n << '\n';
+    x = min_golden_ration(-4, 0, eps, foo27, n);
+    std::cout << "Golden ratio: " << x << "  iterations: " << n << '\n';
+    x = min_Fibonacci(-4, 0, eps, foo27, n);
+    std::cout << "Fibonacci: " << x << "  iterations: " << n << "\n\n";
 
-    std::cout << "Graph data saved to iterations.csv (epsilon = " << GRAPH_EPS << ").\n";
+    std::cout << "Function 50: (3*x^4 - 12*x)*cos(x)\n";
+    x = min_uniform_search(-2, 0, eps, foo50, n);
+    std::cout << "Uniform: " << x << "  iterations: " << n << '\n';
+    x = min_local(-2, 0, eps, foo50, n);
+    std::cout << "Localization: " << x << "  iterations: " << n << '\n';
+    x = min_dihotomia(-2, 0, eps, foo50, n);
+    std::cout << "Dichotomy: " << x << "  iterations: " << n << '\n';
+    x = min_golden_ration(-2, 0, eps, foo50, n);
+    std::cout << "Golden ratio: " << x << "  iterations: " << n << '\n';
+    x = min_Fibonacci(-2, 0, eps, foo50, n);
+    std::cout << "Fibonacci: " << x << "  iterations: " << n << '\n';
+
     return 0;
 }
