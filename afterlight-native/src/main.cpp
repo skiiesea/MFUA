@@ -43,6 +43,7 @@ struct Player {
     float stamina = 100.0f;
     bool campfirePlaced = false;
     Vector3 campfirePosition{0.0f, 0.0f, 0.0f};
+    bool radioLogFound = false;
 };
 
 float DistanceXZ(Vector3 a, Vector3 b) {
@@ -215,6 +216,17 @@ void DrawWorld(Texture2D concreteTexture, Mesh terrainMesh, Material terrainMate
     DrawCylinder({4.7f, 5.25f, 32.0f}, 0.06f, 0.06f, 2.0f, 7, Color{61, 68, 66, 255});
     DrawCylinder({4.7f, 6.25f, 32.0f}, 0.0f, 0.48f, 0.52f, 8, Color{118, 124, 115, 255});
 
+    // A small receiver desk gives the station a clear point of interaction.
+    DrawCube({0.0f, 0.68f, 31.8f}, 2.5f, 0.16f, 1.0f, Color{73, 61, 48, 255});
+    for (float x : {-1.05f, 1.05f}) {
+        for (float z : {31.45f, 32.15f})
+            DrawCube({x, 0.34f, z}, 0.12f, 0.68f, 0.12f, Color{55, 48, 40, 255});
+    }
+    DrawCube({0.0f, 1.12f, 31.55f}, 1.05f, 0.62f, 0.62f, Color{38, 47, 47, 255});
+    DrawCube({0.0f, 1.18f, 31.22f}, 0.72f, 0.30f, 0.035f, Color{70, 111, 105, 255});
+    DrawSphere({-0.34f, 1.12f, 31.15f}, 0.075f, Color{190, 73, 56, 255});
+    DrawSphere({0.34f, 1.12f, 31.15f}, 0.075f, Color{177, 151, 88, 255});
+
     // Pond with rocky bank.
     DrawCylinder({-24.0f, 0.025f, 23.0f}, 7.2f, 7.2f, 0.05f, 40,
                  Color{48, 77, 83, 255});
@@ -227,14 +239,15 @@ void DrawWorld(Texture2D concreteTexture, Mesh terrainMesh, Material terrainMate
 void SaveGame(const Player& player, const std::array<Pickup, 8>& pickups) {
     std::ofstream file("afterlight_save.txt", std::ios::trunc);
     if (!file) return;
-    file << "AFTERLIGHT3\n"
+    file << "AFTERLIGHT4\n"
          << player.position.x << ' ' << player.position.y << ' ' << player.position.z << ' '
          << player.yaw << ' ' << player.pitch << ' '
          << player.wood << ' ' << player.stone << ' ' << player.berries << ' ' << player.cookedBerries << ' '
          << player.health << ' ' << player.hunger << ' ' << player.thirst << ' ' << player.stamina << ' '
          << (player.campfirePlaced ? 1 : 0) << ' '
          << player.campfirePosition.x << ' ' << player.campfirePosition.y << ' '
-         << player.campfirePosition.z << '\n';
+         << player.campfirePosition.z << ' '
+         << (player.radioLogFound ? 1 : 0) << '\n';
     for (const auto& pickup : pickups) file << (pickup.active ? 1 : 0) << ' ';
 }
 
@@ -245,10 +258,13 @@ void LoadGame(Player& player, std::array<Pickup, 8>& pickups) {
     std::string version;
     file >> version;
     const bool legacySave = version == "AFTERLIGHT2";
-    if (!legacySave && version != "AFTERLIGHT3") return;
+    const bool version3Save = version == "AFTERLIGHT3";
+    const bool version4Save = version == "AFTERLIGHT4";
+    if (!legacySave && !version3Save && !version4Save) return;
 
     Player loaded;
     int campfire = 0;
+    int radioLog = 0;
     if (legacySave) {
         file >> loaded.position.x >> loaded.position.y >> loaded.position.z
              >> loaded.yaw >> loaded.wood >> loaded.stone >> loaded.berries
@@ -263,6 +279,7 @@ void LoadGame(Player& player, std::array<Pickup, 8>& pickups) {
              >> campfire >> loaded.campfirePosition.x >> loaded.campfirePosition.y
              >> loaded.campfirePosition.z;
     }
+    if (version4Save) file >> radioLog;
     if (!file) return;
 
     const auto finite = [](float value) { return std::isfinite(value); };
@@ -283,6 +300,7 @@ void LoadGame(Player& player, std::array<Pickup, 8>& pickups) {
         loaded.thirst < 0.0f || loaded.thirst > 100.0f ||
         loaded.stamina < 0.0f || loaded.stamina > 100.0f ||
         (campfire != 0 && campfire != 1) ||
+        (radioLog != 0 && radioLog != 1) ||
         std::abs(loaded.campfirePosition.x) > WORLD_LIMIT ||
         std::abs(loaded.campfirePosition.z) > WORLD_LIMIT) return;
 
@@ -294,6 +312,7 @@ void LoadGame(Player& player, std::array<Pickup, 8>& pickups) {
     }
 
     loaded.campfirePlaced = campfire != 0;
+    loaded.radioLogFound = radioLog != 0;
     loaded.position.y = 1.8f;
     loaded.verticalVelocity = 0.0f;
     loaded.grounded = true;
@@ -493,9 +512,15 @@ int main() {
                 statusMessage = "Fresh water collected";
                 messageTimer = 2.0f;
                 SaveGame(player, pickups);
-            } else if (DistanceXZ(player.position, {0.0f, 0.0f, 31.0f}) < 7.0f) {
-                statusMessage = "STATION 04: investigate the abandoned equipment";
-                messageTimer = 3.0f;
+            } else if (DistanceXZ(player.position, {0.0f, 0.0f, 31.0f}) < 3.2f) {
+                if (!player.radioLogFound) {
+                    player.radioLogFound = true;
+                    statusMessage = "SIGNAL LOG 01: Last Light detected at 03:17. Do not answer.";
+                    SaveGame(player, pickups);
+                } else {
+                    statusMessage = "RECEIVER: The second voice is still repeating.";
+                }
+                messageTimer = 4.5f;
             }
         }
         if (IsKeyPressed(KEY_C)) {
@@ -655,8 +680,10 @@ int main() {
 
         const bool nearCampfirePrompt = player.campfirePlaced &&
             DistanceXZ(player.position, player.campfirePosition) < 2.6f;
-        if (nearestPickup >= 0 || nearCampfirePrompt) {
-            const char* prompt = nearCampfirePrompt ? "E  -  COOK WILD BERRIES" : "E  -  PICK UP RESOURCE";
+        const bool nearRadio = DistanceXZ(player.position, {0.0f, 0.0f, 31.0f}) < 3.2f;
+        if (nearestPickup >= 0 || nearCampfirePrompt || nearRadio) {
+            const char* prompt = nearRadio ? "F  -  LISTEN TO RADIO" :
+                (nearCampfirePrompt ? "E  -  COOK WILD BERRIES" : "E  -  PICK UP RESOURCE");
             DrawRectangle(SCREEN_WIDTH / 2 - 128, SCREEN_HEIGHT / 2 + 28, 256, 34,
                           Fade(Color{12, 18, 18, 255}, 0.82f));
             DrawText(prompt, SCREEN_WIDTH / 2 - MeasureText(prompt, 16) / 2,
@@ -668,6 +695,8 @@ int main() {
                                                 stationDirection.z * stationDirection.z);
         DrawText(TextFormat("STATION 04  |  %im", static_cast<int>(stationDistance)),
                  SCREEN_WIDTH - 250, 24, 18, Color{228, 224, 203, 255});
+        if (player.radioLogFound)
+            DrawText("SIGNAL LOG  01 / 01", SCREEN_WIDTH - 250, 49, 14, Color{174, 199, 177, 255});
 
         if (showHelp) {
             DrawRectangle(18, SCREEN_HEIGHT - 160, 390, 142, Fade(Color{14, 20, 20, 255}, 0.78f));
