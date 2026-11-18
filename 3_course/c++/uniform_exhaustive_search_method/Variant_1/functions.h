@@ -2,19 +2,19 @@
 #include <cmath>
 
 double foo9(double x) {
-    return std::cos(x);
+    return cos(x);
 }
 
 double foo14(double x) {
-    return std::pow(x, 5) - 5 * std::pow(x, 3);
+    return pow(x, 5) - 5 * pow(x, 3);
 }
 
 double foo16(double x) {
-    return std::pow(x, 6) - 5 * std::pow(x, 2);
+    return pow(x, 6) - 5 * pow(x, 2);
 }
 
 double foo19(double x) {
-    return std::pow(x, 3) + 9 * x;
+    return pow(x, 3) + 9 * x;
 }
 
 double foo27(double x) {
@@ -22,5 +22,5 @@ double foo27(double x) {
 }
 
 double foo50(double x) {
-    return (3 * std::pow(x, 4) - 12 * x) * std::cos(x);
+    return (3 * pow(x, 4) - 12 * x) * cos(x);
 }
