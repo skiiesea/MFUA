@@ -31,7 +31,7 @@ The CMake project fetches raylib 5.5 automatically. The executable is produced u
 
 ## Download a ready build
 
-The GitHub Actions workflow `.github/workflows/afterlight-native-windows.yml` builds the x64 Release executable on a Windows runner. The build is published both as a 90-day Actions artifact and as a public preview release at [AFTERLIGHT Preview](https://github.com/skiiesea/MFUA/releases/tag/afterlight-preview), so the EXE can be downloaded without opening the Actions artifact page. The preview release is refreshed after each successful branch push. The game does not require Godot or the Godot editor.
+The GitHub Actions workflow `.github/workflows/afterlight-native-windows.yml` builds the x64 Release executable on a Windows runner, stores it as a 90-day Actions artifact, and copies the latest EXE to `downloads/AFTERLIGHT.exe` on the working branch. The direct download is [AFTERLIGHT.exe](https://github.com/skiiesea/MFUA/raw/refs/heads/codex/afterlight-raylib/downloads/AFTERLIGHT.exe). The game does not require Godot or the Godot editor.
 
 ## Controls
 
