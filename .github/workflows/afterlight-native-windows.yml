@@ -60,27 +60,19 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-      - name: Update public preview tag
+      - name: Publish direct Windows download on the working branch
         if: github.event_name == 'push'
         shell: pwsh
         run: |
-          git tag -f afterlight-preview $env:GITHUB_SHA
-          git push origin refs/tags/afterlight-preview --force
-
-      - name: Publish public Windows preview
-        if: github.event_name == 'push'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: afterlight-preview
-          name: AFTERLIGHT Preview
-          body: |
-            Latest Windows x64 preview build of AFTERLIGHT.
-
-            This is an early native C++ / raylib prototype. Runtime performance still needs validation on the target PC.
-          files: |
-            dist/AFTERLIGHT.exe
-            dist/README.txt
-          prerelease: true
-          make_latest: false
-          overwrite_files: true
-          fail_on_unmatched_files: true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          New-Item -ItemType Directory -Force -Path downloads | Out-Null
+          Copy-Item dist/AFTERLIGHT.exe downloads/AFTERLIGHT.exe -Force
+          git add downloads/AFTERLIGHT.exe
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 1) {
+            git commit -m "Publish AFTERLIGHT Windows executable"
+            git push origin HEAD:refs/heads/codex/afterlight-raylib
+          } elseif ($LASTEXITCODE -ne 0) {
+            throw "Unable to inspect the staged Windows executable."
+          }
