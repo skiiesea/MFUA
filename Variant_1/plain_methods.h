@@ -20,20 +20,18 @@ requires function_of_x<Function> {
 }
 
 template <typename Function>
-double min_local(double a, double b, double eps, Function f) 
+double min_local(double a, double b, double eps, Function f)
 requires function_of_x<Function> {
-    if (b - a < 2 * eps) return (a + b) / 2.0;
-    double xprev = a, fprev = f(xprev);
-    double step = (b - a) / 10.0;
-    double xcurrent = xprev + step, fcurrent = f(xcurrent);
-    double xnext = xcurrent + step, fnext = f(xnext);
-    while (fnext < fcurrent) {
-        xprev = xcurrent;
-        xcurrent = std::exchange(xnext, xnext + step);
-        fprev = std::exchange(fcurrent, fnext);
-        fnext = f(xnext);
+    while (b - a > 2 * eps) {
+        double middle = (a + b) / 2.0;
+
+        if (f(middle - eps) < f(middle + eps))
+            b = middle;
+        else
+            a = middle;
     }
-    return min_local(xprev, xnext, eps, f);
+
+    return (a + b) / 2.0;
 }
 
 template <typename Function>
