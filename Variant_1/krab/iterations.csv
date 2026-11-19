@@ -1,0 +1,241 @@
+function,method,h,iterations
+9,Uniform,0.25,51
+9,Localization,0.25,8
+9,Dichotomy,0.25,5
+9,Golden ratio,0.25,7
+9,Fibonacci,0.25,6
+9,Uniform,0.5,101
+9,Localization,0.5,9
+9,Dichotomy,0.5,6
+9,Golden ratio,0.5,9
+9,Fibonacci,0.5,7
+9,Uniform,0.75,151
+9,Localization,0.75,9
+9,Dichotomy,0.75,7
+9,Golden ratio,0.75,9
+9,Fibonacci,0.75,8
+9,Uniform,1,201
+9,Localization,1,10
+9,Dichotomy,1,7
+9,Golden ratio,1,10
+9,Fibonacci,1,9
+9,Uniform,1.25,251
+9,Localization,1.25,10
+9,Dichotomy,1.25,7
+9,Golden ratio,1.25,11
+9,Fibonacci,1.25,9
+9,Uniform,1.5,301
+9,Localization,1.5,10
+9,Dichotomy,1.5,8
+9,Golden ratio,1.5,11
+9,Fibonacci,1.5,10
+9,Uniform,1.75,351
+9,Localization,1.75,11
+9,Dichotomy,1.75,8
+9,Golden ratio,1.75,11
+9,Fibonacci,1.75,10
+9,Uniform,2,401
+9,Localization,2,11
+9,Dichotomy,2,8
+9,Golden ratio,2,12
+9,Fibonacci,2,10
+14,Uniform,0.25,51
+14,Localization,0.25,1
+14,Dichotomy,0.25,5
+14,Golden ratio,0.25,7
+14,Fibonacci,0.25,6
+14,Uniform,0.5,101
+14,Localization,0.5,1
+14,Dichotomy,0.5,6
+14,Golden ratio,0.5,9
+14,Fibonacci,0.5,7
+14,Uniform,0.75,151
+14,Localization,0.75,1
+14,Dichotomy,0.75,7
+14,Golden ratio,0.75,9
+14,Fibonacci,0.75,8
+14,Uniform,1,201
+14,Localization,1,1
+14,Dichotomy,1,7
+14,Golden ratio,1,10
+14,Fibonacci,1,9
+14,Uniform,1.25,251
+14,Localization,1.25,1
+14,Dichotomy,1.25,7
+14,Golden ratio,1.25,11
+14,Fibonacci,1.25,9
+14,Uniform,1.5,301
+14,Localization,1.5,1
+14,Dichotomy,1.5,8
+14,Golden ratio,1.5,11
+14,Fibonacci,1.5,10
+14,Uniform,1.75,351
+14,Localization,1.75,1
+14,Dichotomy,1.75,8
+14,Golden ratio,1.75,11
+14,Fibonacci,1.75,10
+14,Uniform,2,401
+14,Localization,2,1
+14,Dichotomy,2,8
+14,Golden ratio,2,12
+14,Fibonacci,2,10
+16,Uniform,0.125,25
+16,Localization,0.125,1
+16,Dichotomy,0.125,4
+16,Golden ratio,0.125,6
+16,Fibonacci,0.125,4
+16,Uniform,0.25,50
+16,Localization,0.25,1
+16,Dichotomy,0.25,5
+16,Golden ratio,0.25,7
+16,Fibonacci,0.25,6
+16,Uniform,0.375,75
+16,Localization,0.375,1
+16,Dichotomy,0.375,6
+16,Golden ratio,0.375,8
+16,Fibonacci,0.375,7
+16,Uniform,0.5,100
+16,Localization,0.5,1
+16,Dichotomy,0.5,6
+16,Golden ratio,0.5,9
+16,Fibonacci,0.5,7
+16,Uniform,0.625,125
+16,Localization,0.625,1
+16,Dichotomy,0.625,6
+16,Golden ratio,0.625,9
+16,Fibonacci,0.625,8
+16,Uniform,0.75,150
+16,Localization,0.75,1
+16,Dichotomy,0.75,7
+16,Golden ratio,0.75,9
+16,Fibonacci,0.75,8
+16,Uniform,0.875,175
+16,Localization,0.875,1
+16,Dichotomy,0.875,7
+16,Golden ratio,0.875,10
+16,Fibonacci,0.875,8
+16,Uniform,1,200
+16,Localization,1,1
+16,Dichotomy,1,7
+16,Golden ratio,1,10
+16,Fibonacci,1,9
+19,Uniform,0.25,50
+19,Localization,0.25,1
+19,Dichotomy,0.25,5
+19,Golden ratio,0.25,7
+19,Fibonacci,0.25,6
+19,Uniform,0.5,100
+19,Localization,0.5,1
+19,Dichotomy,0.5,6
+19,Golden ratio,0.5,9
+19,Fibonacci,0.5,7
+19,Uniform,0.75,150
+19,Localization,0.75,1
+19,Dichotomy,0.75,7
+19,Golden ratio,0.75,9
+19,Fibonacci,0.75,8
+19,Uniform,1,200
+19,Localization,1,1
+19,Dichotomy,1,7
+19,Golden ratio,1,10
+19,Fibonacci,1,9
+19,Uniform,1.25,250
+19,Localization,1.25,1
+19,Dichotomy,1.25,7
+19,Golden ratio,1.25,11
+19,Fibonacci,1.25,9
+19,Uniform,1.5,300
+19,Localization,1.5,1
+19,Dichotomy,1.5,8
+19,Golden ratio,1.5,11
+19,Fibonacci,1.5,10
+19,Uniform,1.75,350
+19,Localization,1.75,1
+19,Dichotomy,1.75,8
+19,Golden ratio,1.75,11
+19,Fibonacci,1.75,10
+19,Uniform,2,400
+19,Localization,2,1
+19,Dichotomy,2,8
+19,Golden ratio,2,12
+19,Fibonacci,2,10
+27,Uniform,0.5,101
+27,Localization,0.5,1
+27,Dichotomy,0.5,6
+27,Golden ratio,0.5,9
+27,Fibonacci,0.5,7
+27,Uniform,1,201
+27,Localization,1,1
+27,Dichotomy,1,7
+27,Golden ratio,1,10
+27,Fibonacci,1,9
+27,Uniform,1.5,301
+27,Localization,1.5,1
+27,Dichotomy,1.5,8
+27,Golden ratio,1.5,11
+27,Fibonacci,1.5,10
+27,Uniform,2,401
+27,Localization,2,1
+27,Dichotomy,2,8
+27,Golden ratio,2,12
+27,Fibonacci,2,10
+27,Uniform,2.5,501
+27,Localization,2.5,1
+27,Dichotomy,2.5,8
+27,Golden ratio,2.5,12
+27,Fibonacci,2.5,11
+27,Uniform,3,601
+27,Localization,3,1
+27,Dichotomy,3,9
+27,Golden ratio,3,12
+27,Fibonacci,3,11
+27,Uniform,3.5,701
+27,Localization,3.5,1
+27,Dichotomy,3.5,9
+27,Golden ratio,3.5,13
+27,Fibonacci,3.5,11
+27,Uniform,4,801
+27,Localization,4,1
+27,Dichotomy,4,9
+27,Golden ratio,4,13
+27,Fibonacci,4,12
+50,Uniform,0.1,21
+50,Localization,0.1,1
+50,Dichotomy,0.1,4
+50,Golden ratio,0.1,5
+50,Fibonacci,0.1,4
+50,Uniform,0.2,41
+50,Localization,0.2,1
+50,Dichotomy,0.2,5
+50,Golden ratio,0.2,7
+50,Fibonacci,0.2,5
+50,Uniform,0.3,61
+50,Localization,0.3,1
+50,Dichotomy,0.3,5
+50,Golden ratio,0.3,8
+50,Fibonacci,0.3,6
+50,Uniform,0.4,81
+50,Localization,0.4,1
+50,Dichotomy,0.4,6
+50,Golden ratio,0.4,8
+50,Fibonacci,0.4,7
+50,Uniform,0.5,101
+50,Localization,0.5,1
+50,Dichotomy,0.5,6
+50,Golden ratio,0.5,9
+50,Fibonacci,0.5,7
+50,Uniform,0.6,121
+50,Localization,0.6,1
+50,Dichotomy,0.6,6
+50,Golden ratio,0.6,9
+50,Fibonacci,0.6,8
+50,Uniform,0.7,141
+50,Localization,0.7,1
+50,Dichotomy,0.7,7
+50,Golden ratio,0.7,9
+50,Fibonacci,0.7,8
+50,Uniform,0.8,161
+50,Localization,0.8,1
+50,Dichotomy,0.8,7
+50,Golden ratio,0.8,10
+50,Fibonacci,0.8,8
