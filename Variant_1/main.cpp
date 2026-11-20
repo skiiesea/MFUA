@@ -66,7 +66,7 @@ int main() {
     collect_data(file, 16, foo16, 0, 1, 1);
     collect_data(file, 19, foo19, -1, 1, 2);
     collect_data(file, 27, foo27, -4, 0, 1);
-    collect_data(file, 50, foo50, -2, 0, 2);
+    collect_data(file, 50, foo50, -2, -1.1, 2);
 
     file.close();
 
