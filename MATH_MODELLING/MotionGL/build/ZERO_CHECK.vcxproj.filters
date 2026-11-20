@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\git_demo\MotionGL\build\CMakeFiles\b7f320375e8a063aea5287b5a7ea822b\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{C7350B1F-A37D-374A-8D34-4C548D618046}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

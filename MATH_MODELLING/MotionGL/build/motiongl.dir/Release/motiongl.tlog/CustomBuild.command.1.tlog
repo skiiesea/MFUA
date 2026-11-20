@@ -1,0 +1,10 @@
+^C:\GIT_DEMO\MOTIONGL\CMAKELISTS.TXT
+setlocal
+C:\Users\Student\Desktop\cmake-4.5.0-rc2-windows-x86_64\bin\cmake.exe -SC:/git_demo/MotionGL -BC:/git_demo/MotionGL/build --check-stamp-file C:/git_demo/MotionGL/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
