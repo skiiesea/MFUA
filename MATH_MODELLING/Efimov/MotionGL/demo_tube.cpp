@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <motiongl/tube_animator.hpp>
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
