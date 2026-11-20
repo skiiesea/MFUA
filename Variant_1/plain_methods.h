@@ -9,19 +9,23 @@ concept function_of_x = std::invocable<Function, double> &&
                         std::convertible_to<std::invoke_result_t<Function, double>, double>;
 
 template <typename Function>
-double min_uniform_search(double a, double b, double eps, Function f) 
+double min_uniform_search(double a, double b, double eps, Function f, int& n) 
 requires function_of_x<Function> {
+    n = 0;
     double xk = a;
     double step = eps / 2;
     double min_result = xk;
-    for (;xk <= b; xk += step)
+    for (;xk <= b; xk += step) {
         min_result = (f(xk) < f(min_result)) ? xk : min_result;
+        n++;
+    }
     return min_result;
 }
 
 template <typename Function>
-double min_local(double a, double b, double eps, Function f)
+double min_local(double a, double b, double eps, Function f, int& n)
 requires function_of_x<Function> {
+    n = 0;
     while (b - a > 2 * eps) {
         double middle = (a + b) / 2.0;
 
@@ -35,8 +39,9 @@ requires function_of_x<Function> {
 }
 
 template <typename Function>
-double min_dihotomia(double a, double b, double eps, Function f)
+double min_dihotomia(double a, double b, double eps, Function f, int& n)
 requires function_of_x<Function> {
+    n = 0;
     double xmiddle = (b + a) / 2.0; 
     if ((b - a) < 2 * eps) return xmiddle;
     double xleft = (xmiddle + a) / 2.0;
@@ -45,6 +50,7 @@ requires function_of_x<Function> {
     double fleft = f(xleft);
     double fright = f(xright);
     while ((b - a) >= 2 * eps) {
+        n++;
         if (fleft < fmiddle) {
             b = xmiddle;
             xmiddle = xleft;
@@ -74,13 +80,15 @@ requires function_of_x<Function> {
 }
 
 template <typename Function> 
-double min_golden_nation (double a, double b, double eps, Function f)
+double min_golden_nation (double a, double b, double eps, Function f, int& n)
 requires function_of_x<Function> {
+    n = 0;
     double y = a + (3 - std::sqrt(5)) / 2.0 * (b - a);
     double z = b + a - y;
     double fy = f(y);
     double fz = f(z);
     while ((b - a) > eps) {
+        n++;
         if (fy < fz) {
             b = z;
             z = y;
@@ -99,8 +107,9 @@ requires function_of_x<Function> {
 }
 
 template <typename Function> 
-double min_Fibonacci(double a, double b, double eps, Function f)
+double min_Fibonacci(double a, double b, double eps, Function f, int& n)
 requires function_of_x<Function> {
+    n = 0;
     int fib[100];
     fib[0] = 1;
     fib[1] = 1;
@@ -114,6 +123,7 @@ requires function_of_x<Function> {
     double f1 = f(x1);
     double f2 = f(x2);
     for (int i = 1; i < count - 1; i++) {
+        n++;
         if (f1 < f2) {
             b = x2;
             x2 = x1;
