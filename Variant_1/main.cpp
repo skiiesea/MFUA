@@ -1,76 +1,77 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <numbers>
 #include "functions.h"
 #include "plain_methods.h"
 
+template <typename Function>
+void collect_data(std::ofstream& file, int number, Function f,
+                  double a, double b, int mode) {
+    const double eps = 1e-4;
+    int n = 0;
+
+    for (int i = 1; i <= 10; i++) {
+        double h = (b - a) * i / 10.0;
+        double left = a;
+        double right = b;
+
+        if (mode == 0) {
+            double middle = (a + b) / 2.0;
+            left = middle - h / 2.0;
+            right = middle + h / 2.0;
+        }
+        else if (mode == 1) {
+            left = b - h;
+            right = b;
+        }
+        else {
+            left = a;
+            right = a + h;
+        }
+
+        min_uniform_search(left, right, eps, f, n);
+        file << number << ",Uniform," << h << "," << eps << "," << n << '\n';
+
+        min_local(left, right, eps, f, n);
+        file << number << ",Localization," << h << "," << eps << "," << n << '\n';
+
+        min_dihotomia(left, right, eps, f, n);
+        file << number << ",Dichotomy," << h << "," << eps << "," << n << '\n';
+
+        min_golden_nation(left, right, eps, f, n);
+        file << number << ",Golden," << h << "," << eps << "," << n << '\n';
+
+        min_Fibonacci(left, right, eps, f, n);
+        file << number << ",Fibonacci," << h << "," << eps << "," << n << '\n';
+    }
+}
+
 int main() {
-    std::cout << std::fixed << std::setprecision(8);
-    std::cout << "Uniform: " << std::endl;
-    double x9_min = min_uniform_search(std::numbers::pi / 2, 3 * std::numbers::pi / 2, 1e-6, foo9, n);
-    double x14_min = min_uniform_search(-(std::sqrt(3)), 0, 1e-6, foo14, n);
-    double x16_min = min_uniform_search(0, 1, 1e-6, foo16, n);
-    double x19_min = min_uniform_search(-1, 1, 1e-6, foo19, n);
-    double x27_min = min_uniform_search(-4, 0, 1e-6, foo27, n);
-    double x50_min = min_uniform_search(-2, 0, 1e-6, foo50, n);
-    std::cout << "foo9: x = " << x9_min << " f(x) = " << foo9(x9_min) << '\n';
-    std::cout << "foo14: x = " << x14_min << " f(x) = " << foo14(x14_min) << '\n';
-    std::cout << "foo16: x = " << x16_min << " f(x) = " << foo16(x16_min) << '\n';
-    std::cout << "foo19: x = " << x19_min << " f(x) = " << foo19(x19_min) << '\n';
-    std::cout << "foo27: x = " << x27_min << " f(x) = " << foo27(x27_min) << '\n';
-    std::cout << "foo50: x = " << x50_min << " f(x) = " << foo50(x50_min) << '\n';
-    std::cout << "Localization: " << std::endl;
-    x9_min = min_local(std::numbers::pi / 2, 3 * std::numbers::pi / 2, 1e-6, foo9, n);
-    x14_min = min_local(-(std::sqrt(3)), 0, 1e-6, foo14, n);
-    x16_min = min_local(0, 1, 1e-6, foo16, n);
-    x19_min = min_local(-1, 1, 1e-6, foo19, n);
-    x27_min = min_local(-4, 0, 1e-6, foo27, n);
-    x50_min = min_local(-2, 0, 1e-6, foo50, n);
-    std::cout << "foo9: x = " << x9_min << " f(x) = " << foo9(x9_min) << '\n';
-    std::cout << "foo14: x = " << x14_min << " f(x) = " << foo14(x14_min) << '\n';
-    std::cout << "foo16: x = " << x16_min << " f(x) = " << foo16(x16_min) << '\n';
-    std::cout << "foo19: x = " << x19_min << " f(x) = " << foo19(x19_min) << '\n';
-    std::cout << "foo27: x = " << x27_min << " f(x) = " << foo27(x27_min) << '\n';
-    std::cout << "foo50: x = " << x50_min << " f(x) = " << foo50(x50_min) << '\n';
-    std::cout << "Dichotomia: " << std::endl;
-    x9_min = min_dihotomia(std::numbers::pi / 2, 3 * std::numbers::pi / 2, 1e-6, foo9, n);
-    x14_min = min_dihotomia(-(std::sqrt(3)), 0, 1e-6, foo14, n);
-    x16_min = min_dihotomia(0, 1, 1e-6, foo16, n);
-    x19_min = min_dihotomia(-1, 1, 1e-6, foo19, n);
-    x27_min = min_dihotomia(-4, 0, 1e-6, foo27, n);
-    x50_min = min_dihotomia(-2, 0, 1e-6, foo50, n);
-    std::cout << "foo9: x = " << x9_min << " f(x) = " << foo9(x9_min) << '\n';
-    std::cout << "foo14: x = " << x14_min << " f(x) = " << foo14(x14_min) << '\n';
-    std::cout << "foo16: x = " << x16_min << " f(x) = " << foo16(x16_min) << '\n';
-    std::cout << "foo19: x = " << x19_min << " f(x) = " << foo19(x19_min) << '\n';
-    std::cout << "foo27: x = " << x27_min << " f(x) = " << foo27(x27_min) << '\n';
-    std::cout << "foo50: x = " << x50_min << " f(x) = " << foo50(x50_min) << '\n';
-    std::cout << "Golden nation: " << std::endl;
-    x9_min = min_golden_nation(std::numbers::pi / 2, 3 * std::numbers::pi / 2, 1e-6, foo9, n);
-    x14_min = min_golden_nation(-(std::sqrt(3)), 0, 1e-6, foo14, n);
-    x16_min = min_golden_nation(0, 1, 1e-6, foo16, n);
-    x19_min = min_golden_nation(-1, 1, 1e-6, foo19, n);
-    x27_min = min_golden_nation(-4, 0, 1e-6, foo27, n);
-    x50_min = min_golden_nation(-2, 0, 1e-6, foo50, n);
-    std::cout << "foo9: x = " << x9_min << " f(x) = " << foo9(x9_min) << '\n';
-    std::cout << "foo14: x = " << x14_min << " f(x) = " << foo14(x14_min) << '\n';
-    std::cout << "foo16: x = " << x16_min << " f(x) = " << foo16(x16_min) << '\n';
-    std::cout << "foo19: x = " << x19_min << " f(x) = " << foo19(x19_min) << '\n';
-    std::cout << "foo27: x = " << x27_min << " f(x) = " << foo27(x27_min) << '\n';
-    std::cout << "foo50: x = " << x50_min << " f(x) = " << foo50(x50_min) << '\n';
-    std::cout << "Fibonacci: " << std::endl;
-    x9_min = min_Fibonacci(std::numbers::pi / 2, 3 * std::numbers::pi / 2, 1e-6, foo9, n);
-    x14_min = min_Fibonacci(-(std::sqrt(3)), 0, 1e-6, foo14, n);
-    x16_min = min_Fibonacci(0, 1, 1e-6, foo16, n);
-    x19_min = min_Fibonacci(-1, 1, 1e-6, foo19, n);
-    x27_min = min_Fibonacci(-4, 0, 1e-6, foo27, n);
-    x50_min = min_Fibonacci(-2, 0, 1e-6, foo50, n);
-    std::cout << "foo9: x = " << x9_min << " f(x) = " << foo9(x9_min) << '\n';
-    std::cout << "foo14: x = " << x14_min << " f(x) = " << foo14(x14_min) << '\n';
-    std::cout << "foo16: x = " << x16_min << " f(x) = " << foo16(x16_min) << '\n';
-    std::cout << "foo19: x = " << x19_min << " f(x) = " << foo19(x19_min) << '\n';
-    std::cout << "foo27: x = " << x27_min << " f(x) = " << foo27(x27_min) << '\n';
-    std::cout << "foo50: x = " << x50_min << " f(x) = " << foo50(x50_min) << '\n';
+    std::ofstream file("iteration_width_data.csv");
 
+    if (!file.is_open()) {
+        std::cout << "Cannot create CSV file" << std::endl;
+        return 1;
+    }
 
+    file << "function,method,h,epsilon,iterations\n";
+    file << std::fixed << std::setprecision(8);
+
+    // mode 0 - minimum in the middle, mode 1 - at the right edge,
+    // mode 2 - at the left edge.
+    collect_data(file, 9, foo9, std::numbers::pi / 2,
+                 3 * std::numbers::pi / 2, 0);
+    collect_data(file, 14, foo14, -std::sqrt(3.0), 0, 1);
+    collect_data(file, 16, foo16, 0, 1, 1);
+    collect_data(file, 19, foo19, -1, 1, 2);
+    collect_data(file, 27, foo27, -4, 0, 1);
+    collect_data(file, 50, foo50, -2, 0, 2);
+
+    file.close();
+
+    std::cout << "Data saved to iteration_width_data.csv" << std::endl;
+    std::cout << "Rows: 300 (6 functions x 10 widths x 5 methods)" << std::endl;
+
+    return 0;
 }
