@@ -6,6 +6,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -16,6 +17,7 @@
 #include <motiongl/tube_animator.hpp>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -23,12 +25,12 @@ int main(int argc, char **argv) {
     using namespace mgl;
     int variant = argc > 1 ? std::atoi(argv[1]) : 0;
 
-    const double l = 2.0;            
-    const double v0 = 1.0, a1 = 2.0; 
+    const double l = 2.0;
+    const double v0 = 1.0, a1 = 2.0;
     auto seg1 = [=](double t)
     { return v0 * t + a1 * t * t / 2; };
 
-    const double vB = v0 + a1 * 1.0; 
+    const double vB = v0 + a1 * 1.0;
     std::vector<std::pair<double, double>> seg2;
     for (double tau = 0; tau <= 4.0; tau += 0.01)
         seg2.emplace_back(tau, vB * tau - 0.75 * tau * tau);
