@@ -33,6 +33,7 @@ requires function_of_x<Function> {
             b = middle;
         else
             a = middle;
+        n++;
     }
 
     return (a + b) / 2.0;
