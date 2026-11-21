@@ -354,8 +354,6 @@ void LoadGame(Player& player, std::array<Pickup, 9>& pickups,
         pickups[i].active = activePickups[i];
 }
 
-}
-
 int RunSelfTests() {
     bool passed = true;
     const auto check = [&](bool condition, const char* name) {
@@ -409,6 +407,20 @@ int RunSelfTests() {
     check(oldPlayer.radioLogFound && !oldPlayer.hasSpareFuse && !oldPlayer.secondRadioLogFound,
           "version 4 saves remain compatible");
     check(oldPickups[8].active, "new fuse pickup is available in old saves");
+    std::remove(testPath);
+
+    {
+        std::ofstream legacy(testPath, std::ios::trunc);
+        legacy << "AFTERLIGHT3\n"
+               << "0 1.8 -18 0 -0.1 3 2 1 1 90 80 70 60 1 1 0 2\n"
+               << "1 1 1 1 1 1 1 1\n";
+    }
+    Player middlePlayer;
+    std::array<Pickup, 9> middlePickups{};
+    LoadGame(middlePlayer, middlePickups, testPath);
+    check(middlePlayer.cookedBerries == 1 && !middlePlayer.radioLogFound,
+          "version 3 saves remain compatible");
+    check(middlePickups[8].active, "version 3 saves include the new fuse pickup");
     std::remove(testPath);
 
     {
