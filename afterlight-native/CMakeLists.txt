@@ -33,3 +33,9 @@ endif()
 set_target_properties(AFTERLIGHT PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
+
+include(CTest)
+if(BUILD_TESTING)
+    add_test(NAME afterlight_save_compatibility
+        COMMAND $<TARGET_FILE:AFTERLIGHT> --self-test)
+endif()
