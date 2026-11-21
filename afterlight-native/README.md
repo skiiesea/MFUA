@@ -12,8 +12,10 @@ This is the only actively developed AFTERLIGHT game: a native C++17 / raylib Win
 - Resource gathering, raw berry consumption, pond water interaction and campfire crafting.
 - Campfire cooking loop: use E near a placed campfire to cook gathered berries; press 2 to eat cooked food for a larger hunger recovery and a small health recovery.
 - Dynamic day/night cycle and periodic rain.
-- Versioned local save/load: F5 saves; F9 starts a fresh run. Version 4 stores cooked food, camera pitch and the discovered radio log, validates loaded values, and still reads existing version 2 and 3 saves.
-- Station 04 radio receiver: enter the station and press F near the desk to discover a short story clue. The signal log stays recorded after saving and loading.
+- Versioned local save/load: F5 saves; F9 starts a fresh run. Version 5 stores cooked food, camera pitch, both story logs, spare-fuse state and all nine resource locations. It validates loaded values and remains compatible with version 2, 3 and 4 saves.
+- Headless `--self-test` checks version 5 round-tripping, version 2/4 compatibility and the newly added pickup state without opening a game window.
+- Station 04 radio receiver: enter the station and press F near the desk to discover Signal Log 01. A second objective leads to a remote auxiliary cache; collect its spare 10A fuse, return to the receiver and restore the weather relay to discover Signal Log 02.
+- Objective tracker points to Station 04, the auxiliary cache, and back to the receiver. The spare fuse is shown in the field inventory and consumed when the relay is restored.
 - Target profile: 1280×720, 30 FPS cap, low-cost primitive geometry.
 
 This is an early playable foundation, not the finished survival game. Advanced crafting, building, story events, spatial audio, high-quality texture assets and expanded locations remain future work.
@@ -25,6 +27,7 @@ Install Visual Studio 2022 with the Desktop development with C++ workload and CM
 ```powershell
 cmake -S afterlight-native -B build -A x64 -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release --parallel
+ctest --test-dir build -C Release --output-on-failure
 ```
 
 The CMake project fetches raylib 5.5 automatically. The executable is produced under the build directory.
@@ -54,4 +57,4 @@ The GitHub Actions workflow `.github/workflows/afterlight-native-windows.yml` bu
 
 ## Performance note
 
-The prototype uses lightweight procedural textures and primitive geometry rather than high-poly scanned assets. The 30 FPS cap is a target, not a verified performance result on the user's GT 1030 system. A real runtime pass on that machine is still required.
+The prototype uses lightweight procedural textures and primitive geometry rather than high-poly scanned assets. The 30 FPS cap is a target, not a verified performance result on the user's GT 1030 system. The Windows CI now runs headless save-format regression tests, but a real graphics/input/runtime pass on that machine is still required.
