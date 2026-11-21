@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <fstream>
+#include <cstdio>
 #include <string>
 
 namespace {
@@ -15,16 +16,16 @@ constexpr float WORLD_LIMIT = 58.0f;
 constexpr float PLAYER_RADIUS = 0.38f;
 
 struct BoxCollider { float x, z, halfX, halfZ; };
-constexpr std::array<BoxCollider, 5> STATION_COLLIDERS{{
+constexpr std::array<BoxCollider, 6> WORLD_COLLIDERS{{
     {0.0f, 35.0f, 6.5f, 0.35f}, {-6.5f, 31.0f, 0.35f, 4.0f},
     {6.5f, 31.0f, 0.35f, 4.0f}, {-3.8f, 27.0f, 2.7f, 0.35f},
-    {3.8f, 27.0f, 2.7f, 0.35f}
+    {3.8f, 27.0f, 2.7f, 0.35f}, {40.0f, -5.0f, 1.2f, 0.95f}
 }};
 
 struct Pickup {
     Vector3 position;
     bool active;
-    int type; // 0 = wood, 1 = stone
+    int type; // 0 = wood, 1 = stone, 2 = berries, 3 = spare fuse
 };
 
 struct Player {
@@ -44,6 +45,8 @@ struct Player {
     bool campfirePlaced = false;
     Vector3 campfirePosition{0.0f, 0.0f, 0.0f};
     bool radioLogFound = false;
+    bool hasSpareFuse = false;
+    bool secondRadioLogFound = false;
 };
 
 float DistanceXZ(Vector3 a, Vector3 b) {
@@ -190,6 +193,16 @@ void DrawWorld(Texture2D concreteTexture, Mesh terrainMesh, Material terrainMate
         }
     }
 
+    // Remote auxiliary power cache: a weather-beaten field crate holds a spare fuse.
+    DrawCube({40.0f, 0.12f, -5.0f}, 4.4f, 0.24f, 3.8f, Color{65, 67, 59, 255});
+    DrawCube({40.0f, 0.55f, -5.0f}, 2.0f, 0.82f, 1.55f, Color{83, 78, 65, 255});
+    DrawCube({40.0f, 0.99f, -5.0f}, 2.12f, 0.12f, 1.68f, Color{46, 55, 54, 255});
+    DrawCube({39.0f, 0.57f, -5.0f}, 0.08f, 0.72f, 1.58f, Color{124, 111, 81, 255});
+    DrawCube({41.0f, 0.57f, -5.0f}, 0.08f, 0.72f, 1.58f, Color{124, 111, 81, 255});
+    DrawCube({40.0f, 0.57f, -5.76f}, 2.0f, 0.72f, 0.08f, Color{124, 111, 81, 255});
+    DrawCube({40.0f, 0.57f, -4.24f}, 2.0f, 0.72f, 0.08f, Color{124, 111, 81, 255});
+    DrawCube({40.0f, 1.10f, -5.0f}, 0.52f, 0.08f, 0.34f, Color{173, 139, 76, 255});
+
     // Meteorological Station 04: separate wall sections leave a real doorway.
     DrawCube({0.0f, 0.12f, 31.0f}, 13.0f, 0.24f, 8.0f, Color{70, 72, 66, 255});
     DrawStationTexturedCube(concreteTexture, {0.0f, 2.15f, 35.0f}, 13.0f, 4.3f, 0.35f, WHITE);
@@ -236,10 +249,11 @@ void DrawWorld(Texture2D concreteTexture, Mesh terrainMesh, Material terrainMate
                  0.55f + static_cast<float>(i % 3) * 0.16f, Color{92, 92, 79, 255});
     }
 }
-void SaveGame(const Player& player, const std::array<Pickup, 8>& pickups) {
-    std::ofstream file("afterlight_save.txt", std::ios::trunc);
+void SaveGame(const Player& player, const std::array<Pickup, 9>& pickups,
+              const char* path = "afterlight_save.txt") {
+    std::ofstream file(path, std::ios::trunc);
     if (!file) return;
-    file << "AFTERLIGHT4\n"
+    file << "AFTERLIGHT5\n"
          << player.position.x << ' ' << player.position.y << ' ' << player.position.z << ' '
          << player.yaw << ' ' << player.pitch << ' '
          << player.wood << ' ' << player.stone << ' ' << player.berries << ' ' << player.cookedBerries << ' '
@@ -247,12 +261,15 @@ void SaveGame(const Player& player, const std::array<Pickup, 8>& pickups) {
          << (player.campfirePlaced ? 1 : 0) << ' '
          << player.campfirePosition.x << ' ' << player.campfirePosition.y << ' '
          << player.campfirePosition.z << ' '
-         << (player.radioLogFound ? 1 : 0) << '\n';
+         << (player.radioLogFound ? 1 : 0) << ' '
+         << (player.hasSpareFuse ? 1 : 0) << ' '
+         << (player.secondRadioLogFound ? 1 : 0) << '\n';
     for (const auto& pickup : pickups) file << (pickup.active ? 1 : 0) << ' ';
 }
 
-void LoadGame(Player& player, std::array<Pickup, 8>& pickups) {
-    std::ifstream file("afterlight_save.txt");
+void LoadGame(Player& player, std::array<Pickup, 9>& pickups,
+              const char* path = "afterlight_save.txt") {
+    std::ifstream file(path);
     if (!file) return;
 
     std::string version;
@@ -260,11 +277,14 @@ void LoadGame(Player& player, std::array<Pickup, 8>& pickups) {
     const bool legacySave = version == "AFTERLIGHT2";
     const bool version3Save = version == "AFTERLIGHT3";
     const bool version4Save = version == "AFTERLIGHT4";
-    if (!legacySave && !version3Save && !version4Save) return;
+    const bool version5Save = version == "AFTERLIGHT5";
+    if (!legacySave && !version3Save && !version4Save && !version5Save) return;
 
     Player loaded;
     int campfire = 0;
     int radioLog = 0;
+    int spareFuse = 0;
+    int secondRadioLog = 0;
     if (legacySave) {
         file >> loaded.position.x >> loaded.position.y >> loaded.position.z
              >> loaded.yaw >> loaded.wood >> loaded.stone >> loaded.berries
@@ -279,7 +299,8 @@ void LoadGame(Player& player, std::array<Pickup, 8>& pickups) {
              >> campfire >> loaded.campfirePosition.x >> loaded.campfirePosition.y
              >> loaded.campfirePosition.z;
     }
-    if (version4Save) file >> radioLog;
+    if (version4Save || version5Save) file >> radioLog;
+    if (version5Save) file >> spareFuse >> secondRadioLog;
     if (!file) return;
 
     const auto finite = [](float value) { return std::isfinite(value); };
@@ -301,18 +322,30 @@ void LoadGame(Player& player, std::array<Pickup, 8>& pickups) {
         loaded.stamina < 0.0f || loaded.stamina > 100.0f ||
         (campfire != 0 && campfire != 1) ||
         (radioLog != 0 && radioLog != 1) ||
+        (spareFuse != 0 && spareFuse != 1) ||
+        (secondRadioLog != 0 && secondRadioLog != 1) ||
+        (secondRadioLog != 0 && radioLog == 0) ||
         std::abs(loaded.campfirePosition.x) > WORLD_LIMIT ||
         std::abs(loaded.campfirePosition.z) > WORLD_LIMIT) return;
 
-    std::array<bool, 8> activePickups{};
-    for (auto& active : activePickups) {
+    std::array<bool, 9> activePickups{};
+    for (std::size_t i = 0; i < 8; ++i) {
         int value = 0;
         if (!(file >> value) || (value != 0 && value != 1)) return;
-        active = value != 0;
+        activePickups[i] = value != 0;
+    }
+    if (version5Save) {
+        int value = 0;
+        if (!(file >> value) || (value != 0 && value != 1)) return;
+        activePickups[8] = value != 0;
+    } else {
+        activePickups[8] = true;
     }
 
     loaded.campfirePlaced = campfire != 0;
     loaded.radioLogFound = radioLog != 0;
+    loaded.hasSpareFuse = spareFuse != 0;
+    loaded.secondRadioLogFound = secondRadioLog != 0;
     loaded.position.y = 1.8f;
     loaded.verticalVelocity = 0.0f;
     loaded.grounded = true;
@@ -321,9 +354,83 @@ void LoadGame(Player& player, std::array<Pickup, 8>& pickups) {
         pickups[i].active = activePickups[i];
 }
 
+}
+
+int RunSelfTests() {
+    bool passed = true;
+    const auto check = [&](bool condition, const char* name) {
+        std::printf("%s: %s\n", condition ? "PASS" : "FAIL", name);
+        if (!condition) passed = false;
+    };
+
+    const char* testPath = "afterlight_self_test_save.txt";
+    Player original;
+    original.position = {4.0f, 1.8f, -12.0f};
+    original.yaw = 1.25f;
+    original.pitch = -0.2f;
+    original.wood = 3;
+    original.stone = 2;
+    original.berries = 1;
+    original.cookedBerries = 4;
+    original.health = 87.0f;
+    original.hunger = 76.0f;
+    original.thirst = 65.0f;
+    original.stamina = 54.0f;
+    original.campfirePlaced = true;
+    original.campfirePosition = {2.0f, 0.0f, -9.0f};
+    original.radioLogFound = true;
+    original.hasSpareFuse = true;
+    original.secondRadioLogFound = true;
+    std::array<Pickup, 9> originalPickups{};
+    for (auto& pickup : originalPickups) pickup.active = true;
+    originalPickups[8].active = false;
+    SaveGame(original, originalPickups, testPath);
+
+    Player restored;
+    std::array<Pickup, 9> restoredPickups{};
+    LoadGame(restored, restoredPickups, testPath);
+    check(restored.hasSpareFuse && restored.secondRadioLogFound && restored.radioLogFound,
+          "version 5 story progress survives save/load");
+    check(restored.cookedBerries == 4 && restored.wood == 3 && restored.stone == 2,
+          "version 5 inventory survives save/load");
+    check(!restoredPickups[8].active, "version 5 saves the fuse pickup state");
+    std::remove(testPath);
+
+    {
+        std::ofstream legacy(testPath, std::ios::trunc);
+        legacy << "AFTERLIGHT4\n"
+               << "0 1.8 -18 0 -0.1 3 2 1 1 90 80 70 60 1 1 0 2 1\n"
+               << "1 1 1 1 1 1 1 1\n";
+    }
+    Player oldPlayer;
+    std::array<Pickup, 9> oldPickups{};
+    oldPickups[8].active = false;
+    LoadGame(oldPlayer, oldPickups, testPath);
+    check(oldPlayer.radioLogFound && !oldPlayer.hasSpareFuse && !oldPlayer.secondRadioLogFound,
+          "version 4 saves remain compatible");
+    check(oldPickups[8].active, "new fuse pickup is available in old saves");
+    std::remove(testPath);
+
+    {
+        std::ofstream legacy(testPath, std::ios::trunc);
+        legacy << "AFTERLIGHT2\n"
+               << "0 1.8 -18 0 3 2 1 90 80 70 60 0 0 0 0\n"
+               << "1 1 1 1 1 1 1 1\n";
+    }
+    Player oldestPlayer;
+    std::array<Pickup, 9> oldestPickups{};
+    LoadGame(oldestPlayer, oldestPickups, testPath);
+    check(oldestPlayer.wood == 3 && oldestPlayer.cookedBerries == 0,
+          "version 2 saves remain compatible");
+    std::remove(testPath);
+
+    return passed ? 0 : 1;
+}
+
 } // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    if (argc > 1 && std::string(argv[1]) == "--self-test") return RunSelfTests();
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "AFTERLIGHT");
     SetTargetFPS(30);
@@ -342,7 +449,7 @@ int main() {
     DisableCursor();
 
     Player player;
-    std::array<Pickup, 8> pickups{{
+    std::array<Pickup, 9> pickups{{
         {{-8.0f, 0.55f, -9.0f}, true, 0},
         {{11.0f, 0.55f, -5.0f}, true, 0},
         {{-13.0f, 0.55f, 7.0f}, true, 1},
@@ -350,7 +457,8 @@ int main() {
         {{-18.0f, 0.42f, -2.0f}, true, 2},
         {{-29.0f, 0.42f, 16.0f}, true, 2},
         {{16.0f, 0.55f, 10.0f}, true, 0},
-        {{-6.0f, 0.55f, 22.0f}, true, 1}
+        {{-6.0f, 0.55f, 22.0f}, true, 1},
+        {{40.0f, 0.55f, -3.7f}, true, 3}
     }};
     LoadGame(player, pickups);
 
@@ -410,7 +518,7 @@ int main() {
             const float stepX = movement.x / movementLength * speed * dt;
             const float stepZ = movement.z / movementLength * speed * dt;
             auto blocked = [&](float x, float z) {
-                for (const auto& box : STATION_COLLIDERS) {
+                for (const auto& box : WORLD_COLLIDERS) {
                     if (std::abs(x - box.x) < box.halfX + PLAYER_RADIUS &&
                         std::abs(z - box.z) < box.halfZ + PLAYER_RADIUS) return true;
                 }
@@ -480,8 +588,10 @@ int main() {
                 pickup.active = false;
                 if (pickup.type == 0) ++player.wood;
                 else if (pickup.type == 1) ++player.stone;
-                else ++player.berries;
-                statusMessage = pickup.type == 2 ? "Wild berries collected" : "Resource collected";
+                else if (pickup.type == 2) ++player.berries;
+                else player.hasSpareFuse = true;
+                statusMessage = pickup.type == 2 ? "Wild berries collected" :
+                    (pickup.type == 3 ? "Spare 10A fuse collected" : "Resource collected");
                 messageTimer = 2.0f;
                 SaveGame(player, pickups);
             } else if (nearCampfire) {
@@ -517,6 +627,13 @@ int main() {
                     player.radioLogFound = true;
                     statusMessage = "SIGNAL LOG 01: Last Light detected at 03:17. Do not answer.";
                     SaveGame(player, pickups);
+                } else if (!player.secondRadioLogFound && player.hasSpareFuse) {
+                    player.hasSpareFuse = false;
+                    player.secondRadioLogFound = true;
+                    statusMessage = "SIGNAL LOG 02: Weather relay restored. Signal source is north.";
+                    SaveGame(player, pickups);
+                } else if (!player.secondRadioLogFound) {
+                    statusMessage = "RECEIVER OFFLINE: Find a spare 10A fuse at the auxiliary cache.";
                 } else {
                     statusMessage = "RECEIVER: The second voice is still repeating.";
                 }
@@ -634,6 +751,10 @@ int main() {
                 DrawSphere(pickup.position, 0.24f, Color{145, 48, 53, 255});
                 DrawSphere({pickup.position.x + 0.12f, pickup.position.y + 0.12f, pickup.position.z},
                            0.12f, Color{72, 105, 58, 255});
+            } else if (pickup.type == 3) {
+                DrawCube(pickup.position, 0.48f, 0.12f, 0.20f, Color{112, 125, 125, 255});
+                DrawCube({pickup.position.x, pickup.position.y + 0.08f, pickup.position.z},
+                         0.12f, 0.10f, 0.22f, Color{190, 151, 78, 255});
             } else if (pickup.type == 0) {
                 DrawCylinder(pickup.position, 0.16f, 0.13f, 1.15f, 7, Color{103, 75, 49, 255});
                 DrawCylinder({pickup.position.x, pickup.position.y, pickup.position.z}, 0.14f, 0.14f, 0.035f, 7, Color{177, 139, 94, 255});
@@ -667,23 +788,28 @@ int main() {
                  SCREEN_HEIGHT / 2 + 8, Fade(RAYWHITE, 0.85f));
 
         if (showInventory) {
-            DrawRectangle(SCREEN_WIDTH - 292, 72, 270, 224, Fade(Color{12, 18, 18, 255}, 0.90f));
-            DrawRectangleLines(SCREEN_WIDTH - 292, 72, 270, 224, Color{111, 128, 117, 255});
+            DrawRectangle(SCREEN_WIDTH - 292, 72, 270, 260, Fade(Color{12, 18, 18, 255}, 0.90f));
+            DrawRectangleLines(SCREEN_WIDTH - 292, 72, 270, 260, Color{111, 128, 117, 255});
             DrawText("FIELD INVENTORY", SCREEN_WIDTH - 270, 88, 19, RAYWHITE);
             DrawText(TextFormat("Wood       %02i", player.wood), SCREEN_WIDTH - 270, 123, 16, Color{211, 177, 128, 255});
             DrawText(TextFormat("Stone      %02i", player.stone), SCREEN_WIDTH - 270, 148, 16, Color{180, 190, 194, 255});
             DrawText(TextFormat("Berries    %02i", player.berries), SCREEN_WIDTH - 270, 173, 16, Color{191, 105, 105, 255});
             DrawText(TextFormat("Cooked     %02i", player.cookedBerries), SCREEN_WIDTH - 270, 198, 16, Color{216, 157, 91, 255});
-            DrawText("1 Eat berries   2 Eat cooked food", SCREEN_WIDTH - 270, 231, 12, RAYWHITE);
-            DrawText("E Cook at fire   C Craft fire: 3W + 2S", SCREEN_WIDTH - 270, 263, 11, Color{211, 202, 178, 255});
+            DrawText(player.hasSpareFuse ? "Spare fuse  READY" : "Spare fuse  --",
+                     SCREEN_WIDTH - 270, 223, 14, Color{190, 171, 119, 255});
+            DrawText("1 Eat berries   2 Eat cooked food", SCREEN_WIDTH - 270, 252, 12, RAYWHITE);
+            DrawText("E Cook at fire   C Craft fire: 3W + 2S", SCREEN_WIDTH - 270, 281, 11, Color{211, 202, 178, 255});
         }
 
         const bool nearCampfirePrompt = player.campfirePlaced &&
             DistanceXZ(player.position, player.campfirePosition) < 2.6f;
         const bool nearRadio = DistanceXZ(player.position, {0.0f, 0.0f, 31.0f}) < 3.2f;
         if (nearestPickup >= 0 || nearCampfirePrompt || nearRadio) {
-            const char* prompt = nearRadio ? "F  -  LISTEN TO RADIO" :
-                (nearCampfirePrompt ? "E  -  COOK WILD BERRIES" : "E  -  PICK UP RESOURCE");
+            const bool nearFuse = nearestPickup >= 0 &&
+                pickups[static_cast<std::size_t>(nearestPickup)].type == 3;
+            const char* prompt = nearRadio ? "F  -  USE RADIO RECEIVER" :
+                (nearCampfirePrompt ? "E  -  COOK WILD BERRIES" :
+                 (nearFuse ? "E  -  TAKE SPARE FUSE" : "E  -  PICK UP RESOURCE"));
             DrawRectangle(SCREEN_WIDTH / 2 - 128, SCREEN_HEIGHT / 2 + 28, 256, 34,
                           Fade(Color{12, 18, 18, 255}, 0.82f));
             DrawText(prompt, SCREEN_WIDTH / 2 - MeasureText(prompt, 16) / 2,
@@ -693,16 +819,28 @@ int main() {
         const Vector3 stationDirection{player.position.x, 0.0f, 31.0f - player.position.z};
         const float stationDistance = std::sqrt(stationDirection.x * stationDirection.x +
                                                 stationDirection.z * stationDirection.z);
-        DrawText(TextFormat("STATION 04  |  %im", static_cast<int>(stationDistance)),
-                 SCREEN_WIDTH - 250, 24, 18, Color{228, 224, 203, 255});
+        const float cacheDistance = DistanceXZ(player.position, {40.0f, 0.0f, -5.0f});
+        if (!player.radioLogFound) {
+            DrawText(TextFormat("STATION 04  |  %im", static_cast<int>(stationDistance)),
+                     SCREEN_WIDTH - 250, 24, 18, Color{228, 224, 203, 255});
+        } else if (!player.hasSpareFuse && !player.secondRadioLogFound) {
+            DrawText(TextFormat("AUX CACHE  |  %im", static_cast<int>(cacheDistance)),
+                     SCREEN_WIDTH - 250, 24, 18, Color{228, 224, 203, 255});
+        } else if (!player.secondRadioLogFound) {
+            DrawText(TextFormat("RETURN TO STATION  |  %im", static_cast<int>(stationDistance)),
+                     SCREEN_WIDTH - 250, 24, 16, Color{228, 224, 203, 255});
+        } else {
+            DrawText("STATION 04  |  RESTORED", SCREEN_WIDTH - 250, 24, 18, Color{174, 199, 177, 255});
+        }
         if (player.radioLogFound)
-            DrawText("SIGNAL LOG  01 / 01", SCREEN_WIDTH - 250, 49, 14, Color{174, 199, 177, 255});
+            DrawText(player.secondRadioLogFound ? "SIGNAL LOGS  02 / 02" : "SIGNAL LOGS  01 / 02",
+                     SCREEN_WIDTH - 250, 49, 14, Color{174, 199, 177, 255});
 
         if (showHelp) {
             DrawRectangle(18, SCREEN_HEIGHT - 160, 390, 142, Fade(Color{14, 20, 20, 255}, 0.78f));
             DrawText("WASD Move   SHIFT Sprint   SPACE Jump", 32, SCREEN_HEIGHT - 146, 15, RAYWHITE);
             DrawText("E Collect / cook berries at campfire", 32, SCREEN_HEIGHT - 120, 14, RAYWHITE);
-            DrawText("F Water / station   I Inventory   1 / 2 Eat", 32, SCREEN_HEIGHT - 94, 13, RAYWHITE);
+            DrawText("F Water / radio   I Inventory   1 / 2 Eat", 32, SCREEN_HEIGHT - 94, 13, RAYWHITE);
             DrawText("C Campfire   F5 Save   F9 New   H Help", 32, SCREEN_HEIGHT - 68, 13, RAYWHITE);
             DrawText("ESC Release mouse", 32, SCREEN_HEIGHT - 42, 12, Color{185, 195, 190, 255});
         }
