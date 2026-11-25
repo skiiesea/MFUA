@@ -1,25 +1,76 @@
-name: AFTERLIGHT Godot validation
+name: AFTERLIGHT Godot validation and Windows export
 
 on:
+  push:
+    branches:
+      - codex/afterlight-godot
+    paths:
+      - "afterlight/**"
+      - ".github/workflows/afterlight-godot-ci.yml"
+  pull_request:
+    branches:
+      - codex/afterlight
+    paths:
+      - "afterlight/**"
+      - ".github/workflows/afterlight-godot-ci.yml"
   workflow_dispatch:
 
+concurrency:
+  group: afterlight-godot-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  validate:
+  validate-and-export:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install Godot 4.3.3
+
+      - name: Install Godot 4.3.3 and Windows export templates
         uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.3.3
           use-dotnet: false
+          include-templates: true
+
       - name: Verify engine
         run: godot --version
+
       - name: Import and parse project
         run: godot --headless --editor --path afterlight --quit
+
       - name: Run scene and save smoke test
         run: godot --headless --path afterlight --script res://tests/smoke_test.gd
+
+      - name: Export Windows x64 executable
+        run: |
+          mkdir -p dist
+          godot --headless --path afterlight --export-release "Windows Desktop" dist/AFTERLIGHT.exe
+          test -s dist/AFTERLIGHT.exe
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: AFTERLIGHT-Godot-Windows
+          path: dist/AFTERLIGHT.exe
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish public Godot preview
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: afterlight-godot-preview
+          name: AFTERLIGHT Godot Preview
+          body: |
+            Latest Godot 4.3.3 Windows x64 preview using the Compatibility renderer.
+            This is an early survival prototype. Runtime graphics, input and performance still need validation on the target PC.
+          files: dist/AFTERLIGHT.exe
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          fail_on_unmatched_files: true
