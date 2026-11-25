@@ -10,7 +10,7 @@
 - [x] Berry pickup, food consumption and pond drinking.
 - [x] Hunger, thirst, health and stamina values with HUD.
 - [x] Version 1 save/load for player state, inventory and collected pickup IDs.
-- [ ] Import and headless scene/save smoke test on CI.
+- [x] Import and headless scene/save smoke test on CI.
 - [ ] Manual graphics/input smoke test on the target PC.
 - [ ] Measure average and lowest FPS at 1280x720 on the GT 1030.
 
@@ -36,3 +36,11 @@
 - [ ] Exploration notes and environmental storytelling.
 - [ ] Additional valley locations and research sites.
 - [ ] New regions built as separate, streamable scenes.
+
+
+## Latest verified CI milestone
+
+- Godot 4.3.0 Compatibility project import passed.
+- Scene/save smoke test passed: berry pickup, inventory persistence and collected-pickup restoration.
+- Windows x64 export, artifact upload and preview release passed.
+- Target-PC graphics, controls and 30 FPS performance are still unverified.
