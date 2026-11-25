@@ -379,12 +379,16 @@ func _spawn_pickup(
 
 
 func _restore_collected_pickups() -> void:
-	var player := get_node_or_null("Player")
+	var player: Node = get_node_or_null("Player")
 	if player == null:
 		return
 
+	var collected_ids: Variant = player.get("collected_pickups")
+	if not (collected_ids is Array):
+		return
+
 	for pickup in get_tree().get_nodes_in_group("resource_pickups"):
-		if player.collected_pickups.has(str(pickup.name)):
+		if collected_ids.has(str(pickup.name)):
 			pickup.queue_free()
 
 
