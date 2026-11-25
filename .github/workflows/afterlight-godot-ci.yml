@@ -30,10 +30,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Godot 4.3.3 and Windows export templates
-        uses: chickensoft-games/setup-godot@v2
+      - name: Install Godot 4.3.0 and Windows export templates
+        uses: chickensoft-games/setup-godot@v2.4.3
         with:
-          version: 4.3.3
+          version: 4.3.0
           use-dotnet: false
           include-templates: true
 
@@ -67,7 +67,7 @@ jobs:
           tag_name: afterlight-godot-preview
           name: AFTERLIGHT Godot Preview
           body: |
-            Latest Godot 4.3.3 Windows x64 preview using the Compatibility renderer.
+            Latest Godot 4.3.0 Windows x64 preview using the Compatibility renderer.
             This is an early survival prototype. Runtime graphics, input and performance still need validation on the target PC.
           files: dist/AFTERLIGHT.exe
           prerelease: true
