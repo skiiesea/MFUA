@@ -1,28 +1,34 @@
 # AFTERLIGHT development roadmap
 
-## Prototype foundation — in progress
+## Godot 4 prototype foundation
 
 - [x] Godot 4 project configured for Compatibility rendering.
 - [x] First-person movement, mouse look, sprint and jump.
-- [x] Procedural valley blockout with forest, service track and station exterior.
-- [x] Basic resource pickup interaction and runtime counters.
-- [ ] Import and runtime smoke test in Godot.
-- [ ] Measure performance on the target PC and tune tree count, shadows and fog.
+- [x] Procedural valley blockout with forest, service track, pond and Station 04.
+- [x] Basic collision for ground, station walls and nearby tree trunks.
+- [x] Resource pickup interaction for wood and stone.
+- [x] Berry pickup, food consumption and pond drinking.
+- [x] Hunger, thirst, health and stamina values with HUD.
+- [x] Version 1 save/load for player state, inventory and collected pickup IDs.
+- [ ] Import and headless scene/save smoke test on CI.
+- [ ] Manual graphics/input smoke test on the target PC.
+- [ ] Measure average and lowest FPS at 1280x720 on the GT 1030.
 
-## Survival loop
+## Next: first campfire loop
 
-- [ ] Persistent inventory data model and item definitions.
-- [ ] Gathering nodes with respawn or depletion rules.
-- [ ] Crafting recipes and a compact crafting UI.
-- [ ] Health, hunger, thirst and temperature.
-- [ ] Basic shelter and campfire placement.
+- [ ] Add item definitions and simple inventory capacity rules.
+- [ ] Add a campfire recipe (wood + stone).
+- [ ] Place the campfire in front of the player with a valid-ground check.
+- [ ] Add a low-cost flame/light effect and a simple interaction prompt.
+- [ ] Save and restore the placed campfire.
+- [ ] Test that materials are consumed only after successful placement.
 
 ## World systems
 
 - [ ] Day/night cycle with low-cost lighting changes.
 - [ ] Weather states and restrained rain/fog effects.
 - [ ] Audio ambience, footsteps and interaction sounds.
-- [ ] Save/load with a versioned save format.
+- [ ] Versioned save migration as new systems are added.
 
 ## Story and expansion
 
