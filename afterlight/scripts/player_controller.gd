@@ -1,5 +1,10 @@
 extends CharacterBody3D
 
+const SAVE_PATH: String = "user://afterlight_save.cfg"
+const SAVE_VERSION: int = 1
+const POND_POSITION: Vector2 = Vector2(22.0, -23.0)
+const POND_DRINK_DISTANCE: float = 8.5
+
 @export var move_speed: float = 4.5
 @export var sprint_speed: float = 6.5
 @export var jump_velocity: float = 4.2
@@ -15,13 +20,22 @@ extends CharacterBody3D
 var gravity: float = float(ProjectSettings.get_setting("physics/3d/default_gravity"))
 var inventory: Dictionary = {
 	"wood": 0,
-	"stone": 0
+	"stone": 0,
+	"berries": 0
 }
+var collected_pickups: Array[String] = []
+
+var health: float = 100.0
+var hunger: float = 100.0
+var thirst: float = 100.0
+var stamina: float = 100.0
 
 var prompt_label: Label
 var inventory_label: Label
+var survival_label: Label
 var notification_label: Label
 var notification_time: float = 0.0
+var hud_refresh_time: float = 0.0
 
 
 func _ready() -> void:
@@ -31,6 +45,10 @@ func _ready() -> void:
 	interaction_ray.target_position = Vector3(0.0, 0.0, -interaction_distance)
 	_create_hud()
 	_update_inventory_hud()
+	_update_survival_hud()
+
+	if FileAccess.file_exists(SAVE_PATH):
+		load_game(false)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -43,17 +61,31 @@ func _unhandled_input(event: InputEvent) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		elif event.is_action_pressed("interact"):
 			_interact()
+		elif event.is_action_pressed("save_game"):
+			save_game()
+		elif event.is_action_pressed("load_game"):
+			load_game()
+		elif event.is_action_pressed("consume_food"):
+			_consume_berries()
+		elif event.is_action_pressed("drink_water"):
+			_drink_from_pond()
 	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func _process(delta: float) -> void:
 	_update_interaction_prompt()
+
 	if notification_time > 0.0:
 		notification_time = maxf(0.0, notification_time - delta)
-		notification_label.visible = true
+		notification_label.visible = notification_time > 0.0
 	else:
 		notification_label.visible = false
+
+	hud_refresh_time -= delta
+	if hud_refresh_time <= 0.0:
+		hud_refresh_time = 0.25
+		_update_survival_hud()
 
 
 func _physics_process(delta: float) -> void:
@@ -64,10 +96,22 @@ func _physics_process(delta: float) -> void:
 
 	var input_vector := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := (global_transform.basis * Vector3(input_vector.x, 0.0, input_vector.y)).normalized()
-	var current_speed := sprint_speed if Input.is_action_pressed("sprint") else move_speed
+	var moving := direction.length_squared() > 0.001
+	var wants_sprint := Input.is_action_pressed("sprint") and moving and stamina > 0.0
+	var current_speed := sprint_speed if wants_sprint else move_speed
 	var acceleration := ground_acceleration if is_on_floor() else air_acceleration
 
-	if direction.length_squared() > 0.001:
+	if wants_sprint:
+		stamina = maxf(0.0, stamina - 22.0 * delta)
+	else:
+		stamina = minf(100.0, stamina + 16.0 * delta)
+
+	hunger = maxf(0.0, hunger - 0.035 * delta)
+	thirst = maxf(0.0, thirst - 0.055 * delta)
+	if hunger <= 0.0 or thirst <= 0.0:
+		health = maxf(0.0, health - 1.5 * delta)
+
+	if moving:
 		velocity.x = move_toward(velocity.x, direction.x * current_speed, acceleration * delta)
 		velocity.z = move_toward(velocity.z, direction.z * current_speed, acceleration * delta)
 	else:
@@ -99,24 +143,150 @@ func _interact() -> void:
 		target.interact(self)
 
 
-func add_resource(resource_id: String, amount: int) -> void:
+func add_resource(resource_id: String, amount: int, pickup_id: String = "") -> void:
 	if amount <= 0:
 		return
 
+	if not inventory.has(resource_id):
+		return
+
 	inventory[resource_id] = int(inventory.get(resource_id, 0)) + amount
+	if pickup_id != "" and not collected_pickups.has(pickup_id):
+		collected_pickups.append(pickup_id)
+
 	_update_inventory_hud()
-	notification_label.text = "+%d %s" % [amount, resource_id.to_upper()]
-	notification_time = 1.8
+	_show_notification("+%d %s" % [amount, resource_id.to_upper()])
+
+
+func _consume_berries() -> void:
+	if int(inventory.get("berries", 0)) <= 0:
+		_show_notification("NO BERRIES")
+		return
+
+	inventory["berries"] = int(inventory["berries"]) - 1
+	hunger = minf(100.0, hunger + 35.0)
+	health = minf(100.0, health + 4.0)
+	_update_inventory_hud()
+	_update_survival_hud()
+	_show_notification("ATE WILD BERRIES")
+
+
+func _drink_from_pond() -> void:
+	var player_position := Vector2(global_position.x, global_position.z)
+	if player_position.distance_to(POND_POSITION) > POND_DRINK_DISTANCE:
+		_show_notification("NO WATER SOURCE NEARBY")
+		return
+
+	if thirst >= 99.0:
+		_show_notification("NOT THIRSTY")
+		return
+
+	thirst = minf(100.0, thirst + 45.0)
+	_update_survival_hud()
+	_show_notification("DRANK FROM THE POND")
+
+
+func save_game() -> bool:
+	var config := ConfigFile.new()
+	config.set_value("meta", "version", SAVE_VERSION)
+	config.set_value("player", "position", global_position)
+	config.set_value("player", "yaw", rotation.y)
+	config.set_value("player", "pitch", head.rotation.x)
+	config.set_value("player", "inventory", inventory)
+	config.set_value("player", "health", health)
+	config.set_value("player", "hunger", hunger)
+	config.set_value("player", "thirst", thirst)
+	config.set_value("player", "stamina", stamina)
+	config.set_value("world", "collected_pickups", collected_pickups)
+
+	var error := config.save(SAVE_PATH)
+	if error == OK:
+		_show_notification("GAME SAVED")
+		return true
+
+	_show_notification("SAVE FAILED")
+	return false
+
+
+func load_game(show_message: bool = true) -> bool:
+	var config := ConfigFile.new()
+	var error := config.load(SAVE_PATH)
+	if error != OK:
+		if show_message:
+			_show_notification("NO SAVE FOUND")
+		return false
+
+	var version := int(config.get_value("meta", "version", 0))
+	if version != SAVE_VERSION:
+		if show_message:
+			_show_notification("SAVE VERSION NOT SUPPORTED")
+		return false
+
+	var saved_position: Variant = config.get_value("player", "position", global_position)
+	if typeof(saved_position) == TYPE_VECTOR3:
+		global_position = saved_position
+
+	rotation.y = float(config.get_value("player", "yaw", rotation.y))
+	head.rotation.x = clampf(
+		float(config.get_value("player", "pitch", head.rotation.x)),
+		deg_to_rad(-84.0),
+		deg_to_rad(84.0)
+	)
+
+	var saved_inventory: Variant = config.get_value("player", "inventory", {})
+	if saved_inventory is Dictionary:
+		for resource_id in ["wood", "stone", "berries"]:
+			inventory[resource_id] = maxi(0, int(saved_inventory.get(resource_id, 0)))
+
+	health = clampf(float(config.get_value("player", "health", health)), 0.0, 100.0)
+	hunger = clampf(float(config.get_value("player", "hunger", hunger)), 0.0, 100.0)
+	thirst = clampf(float(config.get_value("player", "thirst", thirst)), 0.0, 100.0)
+	stamina = clampf(float(config.get_value("player", "stamina", stamina)), 0.0, 100.0)
+
+	collected_pickups.clear()
+	var saved_pickups: Variant = config.get_value("world", "collected_pickups", [])
+	if saved_pickups is Array:
+		for pickup_id in saved_pickups:
+			if pickup_id is String and not collected_pickups.has(pickup_id):
+				collected_pickups.append(pickup_id)
+
+	_update_inventory_hud()
+	_update_survival_hud()
+	if show_message:
+		_show_notification("GAME LOADED")
+	return true
 
 
 func _update_inventory_hud() -> void:
 	if not is_instance_valid(inventory_label):
 		return
 
-	inventory_label.text = "WOOD  %02d     STONE  %02d" % [
+	inventory_label.text = "WOOD  %02d     STONE  %02d     BERRIES  %02d" % [
 		int(inventory.get("wood", 0)),
-		int(inventory.get("stone", 0))
+		int(inventory.get("stone", 0)),
+		int(inventory.get("berries", 0))
 	]
+
+
+func _update_survival_hud() -> void:
+	if not is_instance_valid(survival_label):
+		return
+
+	survival_label.text = "HP %03d   FOOD %03d   WATER %03d   STAMINA %03d" % [
+		int(roundf(health)),
+		int(roundf(hunger)),
+		int(roundf(thirst)),
+		int(roundf(stamina))
+	]
+
+
+func _show_notification(message: String) -> void:
+	if not is_instance_valid(notification_label):
+		return
+
+	notification_label.text = message
+	notification_time = 1.8
+	notification_label.visible = true
 
 
 func _create_hud() -> void:
@@ -150,9 +320,22 @@ func _create_hud() -> void:
 	inventory_label = Label.new()
 	inventory_label.name = "InventoryReadout"
 	inventory_label.position = Vector2(24.0, 22.0)
-	inventory_label.add_theme_font_size_override("font_size", 17)
+	inventory_label.add_theme_font_size_override("font_size", 15)
 	inventory_label.add_theme_color_override("font_color", Color(0.88, 0.89, 0.81))
 	root.add_child(inventory_label)
+
+	survival_label = Label.new()
+	survival_label.name = "SurvivalReadout"
+	survival_label.anchor_left = 1.0
+	survival_label.anchor_right = 1.0
+	survival_label.offset_left = -430.0
+	survival_label.offset_right = -24.0
+	survival_label.offset_top = 22.0
+	survival_label.offset_bottom = 48.0
+	survival_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	survival_label.add_theme_font_size_override("font_size", 15)
+	survival_label.add_theme_color_override("font_color", Color(0.88, 0.89, 0.81))
+	root.add_child(survival_label)
 
 	prompt_label = Label.new()
 	prompt_label.name = "InteractionPrompt"
