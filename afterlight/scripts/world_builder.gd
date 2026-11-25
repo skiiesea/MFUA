@@ -21,6 +21,7 @@ func _ready() -> void:
 	_create_station()
 	_create_rocks()
 	_create_pickups()
+	_restore_collected_pickups()
 
 
 func _create_materials() -> void:
@@ -312,6 +313,7 @@ func _create_pickups() -> void:
 	_spawn_pickup("StoneChunk", "stone", "STONE", 1, Vector3(-2.7, 0.7, 1.0), Color(0.42, 0.47, 0.45), false)
 	_spawn_pickup("WoodBundle_02", "wood", "WOOD", 2, Vector3(4.5, 0.75, -5.0), Color(0.45, 0.25, 0.13), true)
 	_spawn_pickup("StoneChunk_02", "stone", "STONE", 1, Vector3(-4.2, 0.7, -8.0), Color(0.42, 0.47, 0.45), false)
+	_spawn_pickup("BerryCluster_01", "berries", "WILD BERRIES", 3, Vector3(-3.5, 0.65, -2.0), Color(0.55, 0.16, 0.13), false)
 
 
 func _spawn_pickup(
@@ -339,7 +341,18 @@ func _spawn_pickup(
 	collision.shape = sphere_shape
 	pickup.add_child(collision)
 
-	if is_wood:
+	if resource_id == "berries":
+		for berry_index in range(3):
+			var berry_mesh := SphereMesh.new()
+			berry_mesh.radial_segments = 8
+			berry_mesh.rings = 5
+			var berry := MeshInstance3D.new()
+			berry.mesh = berry_mesh
+			berry.material_override = _make_material(color, 0.72)
+			berry.position = Vector3(float(berry_index - 1) * 0.2, -0.12, 0.0)
+			berry.scale = Vector3(0.22, 0.22, 0.22)
+			pickup.add_child(berry)
+	elif is_wood:
 		var log_mesh := CylinderMesh.new()
 		log_mesh.top_radius = 0.2
 		log_mesh.bottom_radius = 0.2
@@ -363,6 +376,16 @@ func _spawn_pickup(
 		pickup.add_child(stone)
 
 	add_child(pickup)
+
+
+func _restore_collected_pickups() -> void:
+	var player := get_node_or_null("Player")
+	if player == null:
+		return
+
+	for pickup in get_tree().get_nodes_in_group("resource_pickups"):
+		if player.collected_pickups.has(str(pickup.name)):
+			pickup.queue_free()
 
 
 func _add_box(
