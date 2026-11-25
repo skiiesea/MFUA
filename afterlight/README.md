@@ -4,33 +4,38 @@ AFTERLIGHT is a first-person 3D survival game for Windows, built with Godot 4 an
 
 ## Development target
 
-- Engine: Godot 4.x (project currently targets the Godot 4.3 project format)
-- Renderer: Compatibility
+- Engine: Godot 4.3.x
+- Renderer: Compatibility (OpenGL)
 - Language: GDScript
 - Platform: Windows 10/11 x64
 - Visual direction: stylized realism
-- Initial performance target: 720p, stable 30 FPS on Intel Core i3-10100F, GeForce GT 1030 2 GB and 8 GB RAM.
+- Initial performance target: 1280x720 at stable 30 FPS on Intel Core i3-10100F, GeForce GT 1030 2 GB and 8 GB RAM.
 
 ## Current prototype
 
-The first playable greybox has been replaced with a procedural first-look at the valley:
+The current Godot branch contains:
 
-- A low-cost forest made from MultiMesh tree canopies and trunks.
-- A service track leading toward Meteorological Station 04.
-- A simple station exterior, distant hills, rocks, a pond and atmospheric fog.
-- A first-person controller with mouse look, walking, sprinting and jumping.
-- A small HUD with a crosshair, resource counters and interaction prompts.
-- Four test resource pickups (wood and stone) that update the player's runtime inventory.
+- Procedural low-cost forest using MultiMesh trunks and canopies.
+- Service track, pond, rocks, distant hills and Meteorological Station 04.
+- First-person movement, mouse look, sprint and jump.
+- Basic collision for the valley floor, station and nearby tree trunks.
+- Runtime inventory for wood, stone and wild berries.
+- Resource pickups that cannot be collected twice during a session.
+- Hunger, thirst, health and stamina values with a compact HUD.
+- Eating gathered berries restores hunger and a small amount of health.
+- Drinking is available near the pond.
+- F5 saves player position, view direction, inventory, survival values and collected pickup IDs.
+- F9 loads the saved state and removes already collected pickups after the world is created.
+- Versioned ConfigFile save format (version 1).
 
-The scene uses built-in Godot meshes and materials. No external asset packs are required.
+The environment still uses built-in Godot meshes and materials. There are no external asset packs or high-resolution textures.
 
 ## Open the project
 
-1. Install Godot 4.x.
-2. Clone or pull the codex/afterlight branch.
-3. Import afterlight/project.godot in Godot.
-4. Run the project with F6/F5.
-5. Click the game window to capture the mouse. Press Esc to release it.
+1. Install Godot 4.3.x.
+2. Open `afterlight/project.godot` in the Godot editor.
+3. Run the main scene with F6 or the project with F5.
+4. Click the game window to capture the mouse. Press Esc to release it.
 
 ## Controls
 
@@ -41,28 +46,23 @@ The scene uses built-in Godot meshes and materials. No external asset packs are 
 | Sprint | Shift |
 | Jump | Space |
 | Pick up resource | E |
+| Eat one berry | 1 |
+| Drink near the pond | 2 |
+| Save | F5 |
+| Load | F9 |
 | Release mouse | Esc |
 | Re-capture mouse | Left mouse button |
 
-Look toward a wood or stone pickup until the interaction prompt appears, then press E. The HUD counters should increase and the pickup should disappear.
-
-## Project structure
-
-- project.godot — renderer, viewport and input actions.
-- scenes/main.tscn — procedural valley entry scene.
-- scenes/player.tscn — first-person player and interaction ray.
-- scripts/player_controller.gd — movement, camera, HUD and runtime inventory.
-- scripts/world_builder.gd — procedural environment and test pickups.
-- scripts/resource_pickup.gd — resource interaction behavior.
-
 ## Performance principles
 
-The forest uses MultiMesh for visible tree geometry, simple materials and no external high-resolution textures. Tree shadows are disabled to reduce GPU cost. The target PC still needs an in-game measurement pass; the 30 FPS target is not yet verified.
+The forest uses MultiMesh for repeated geometry, simple materials and no external high-resolution textures. Tree shadows are disabled. The sun still casts shadows on the remaining scene; if the target PC falls below 30 FPS, reduce shadow distance and tree density before adding post-processing.
 
-## Verification status
+The 30 FPS target is not yet verified on the user's GT 1030 system. A real two-minute playtest at 1280x720 is still required.
 
-The repository changes have been written to the development branch. Godot is not available in the automation environment, so the project has **not** been imported, launched, or tested with the Godot editor/runtime here. Use the manual smoke-test checklist in docs/TESTING.md on the target PC before treating this prototype as verified.
+## Verification
 
-## Scope
+The GitHub Actions workflow runs a headless Godot 4.3.3 import/parse pass and a scene/save smoke test. This confirms project loading and scripted logic on the CI runner; it does not replace a graphics/input/performance test on the target PC.
 
-The valley is a foundation for later survival systems: gathering, crafting, building, needs, weather, time of day, radio story events and save/load. Those systems are not implemented yet.
+## Next systems
+
+Crafting recipes, campfire placement, building, weather, day/night, audio, radio story events and expanded research sites remain future work.
