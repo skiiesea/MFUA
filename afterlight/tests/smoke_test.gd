@@ -6,6 +6,8 @@ func _initialize() -> void:
 
 
 func _run_smoke_test() -> void:
+	_remove_test_save()
+
 	var packed_scene := load("res://scenes/main.tscn") as PackedScene
 	assert(packed_scene != null, "Main scene could not be loaded.")
 
@@ -40,9 +42,12 @@ func _run_smoke_test() -> void:
 		"Collected berry pickup respawned after loading."
 	)
 
+	_remove_test_save()
+	print("AFTERLIGHT Godot scene/save smoke test passed.")
+	quit()
+
+
+func _remove_test_save() -> void:
 	var save_path := ProjectSettings.globalize_path("user://afterlight_save.cfg")
 	if FileAccess.file_exists("user://afterlight_save.cfg"):
 		DirAccess.remove_absolute(save_path)
-
-	print("AFTERLIGHT Godot scene/save smoke test passed.")
-	quit()
