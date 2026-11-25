@@ -2,6 +2,10 @@ extends SceneTree
 
 
 func _initialize() -> void:
+	call_deferred("_run_smoke_test")
+
+
+func _run_smoke_test() -> void:
 	_remove_test_save()
 
 	var packed_scene := load("res://scenes/main.tscn") as PackedScene
@@ -10,6 +14,7 @@ func _initialize() -> void:
 
 	var first_world := packed_scene.instantiate()
 	root.add_child(first_world)
+	await process_frame
 
 	var first_player: Variant = first_world.get_node_or_null("Player")
 	if not _check(first_player != null, "Player node is missing."):
@@ -29,11 +34,13 @@ func _initialize() -> void:
 	if not _check(first_player.save_game(), "Save file could not be written."):
 		return
 
-	root.remove_child(first_world)
-	first_world.free()
+	first_world.queue_free()
+	await process_frame
 
 	var second_world := packed_scene.instantiate()
 	root.add_child(second_world)
+	await process_frame
+	await process_frame
 
 	var second_player: Variant = second_world.get_node_or_null("Player")
 	if not _check(second_player != null, "Player node was not recreated."):
@@ -46,8 +53,8 @@ func _initialize() -> void:
 		_check(false, "Collected berry pickup respawned after loading.")
 		return
 
-	root.remove_child(second_world)
-	second_world.free()
+	second_world.queue_free()
+	await process_frame
 	_remove_test_save()
 	print("AFTERLIGHT Godot scene/save smoke test passed.")
 	quit()
