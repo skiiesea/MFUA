@@ -59,9 +59,12 @@ The forest uses MultiMesh for repeated geometry, simple materials and no externa
 
 The 30 FPS target is not yet verified on the user's GT 1030 system. A real two-minute playtest at 1280x720 is still required.
 
-## Verification
+## Windows preview
 
-The GitHub Actions workflow runs a headless Godot 4.3.3 import/parse pass and a scene/save smoke test. This confirms project loading and scripted logic on the CI runner; it does not replace a graphics/input/performance test on the target PC.
+The Godot branch publishes a Windows x64 preview after the headless checks pass:
+[Download AFTERLIGHT Godot Preview](https://github.com/skiiesea/MFUA/releases/tag/afterlight-godot-preview).
+
+The export embeds the project data into the executable. Runtime graphics, controls and performance still need a manual test on the target PC.
 
 ## Next systems
 
