@@ -51,3 +51,16 @@ The workflow uses Godot 4.3.3 in headless mode.
 - [ ] If performance is below 30 FPS, reduce tree density and shadow distance first.
 
 The automated checks do not validate real GPU performance, mouse feel or visual quality on the user's GT 1030 PC.
+
+
+## Latest automated result — 25 November 2026
+
+- [x] Godot 4.3.0 project import and script parse.
+- [x] Main scene and player instantiate.
+- [x] Berry pickup updates inventory and records its stable node ID.
+- [x] Save/load restores inventory and prevents the collected berry pickup from returning.
+- [x] Windows x64 export, artifact upload and preview release.
+
+CI run: https://github.com/skiiesea/MFUA/actions/runs/45685645044
+
+The headless dummy renderer emitted repeated null-mesh messages while the test scenes were being freed, but the smoke test and export both exited successfully. This is recorded for follow-up; graphical runtime behavior still needs checking on the target PC.
