@@ -117,8 +117,9 @@ func _create_forest() -> void:
 	trunk_mesh.height = 2.6
 	trunk_mesh.radial_segments = 6
 
-	var canopy_mesh := ConeMesh.new()
-	canopy_mesh.radius = 1.25
+	var canopy_mesh := CylinderMesh.new()
+	canopy_mesh.top_radius = 0.0
+	canopy_mesh.bottom_radius = 1.25
 	canopy_mesh.height = 3.8
 	canopy_mesh.radial_segments = 7
 
