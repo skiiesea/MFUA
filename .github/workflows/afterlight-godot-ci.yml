@@ -49,7 +49,7 @@ jobs:
       - name: Export Windows x64 executable
         run: |
           mkdir -p dist
-          godot --headless --path afterlight --export-release "Windows Desktop" dist/AFTERLIGHT.exe
+          godot --headless --path afterlight --export-release "Windows Desktop" ../dist/AFTERLIGHT.exe
           test -s dist/AFTERLIGHT.exe
 
       - name: Upload Windows build
