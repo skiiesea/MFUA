@@ -74,4 +74,7 @@ async def check_subscription(bot: Bot, channel_id: str | int, user_id: int) -> t
 
     if member.status in SUBSCRIBED_STATUSES:
         return True, ""
+    # В каналах встречается статус restricted с флагом is_member=True.
+    if member.status == "restricted" and getattr(member, "is_member", False):
+        return True, ""
     return False, NOT_SUBSCRIBED

@@ -63,6 +63,16 @@ copy .env.example .env      # Windows
 python main.py
 ```
 
+> Если `python -m venv` падает с ошибкой `ensurepip` (например, в Python 3.15 без
+> встроенного ensurepip), создайте окружение через
+> [uv](https://docs.astral.sh/uv/):
+>
+> ```bash
+> uv venv --python 3.14 .venv
+> uv pip install --python .venv\Scripts\python.exe -r requirements.txt
+> .venv\Scripts\python main.py
+> ```
+
 ## Переменные окружения
 
 | Переменная        | Обязательна | Описание                                              |
