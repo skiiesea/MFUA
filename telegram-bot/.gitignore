@@ -1,0 +1,24 @@
+# Секреты
+.env
+.env.*
+!.env.example
+
+# База данных SQLite
+*.db
+*.sqlite3
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE и ОС
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
