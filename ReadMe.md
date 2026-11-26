@@ -64,3 +64,18 @@ Experienced developer specializing in low-level systems, mathematical modeling, 
     <td>Available for core architecture discussions and research</td>
   </tr>
 </table>
+
+---
+
+## repository-layout / structure
+
+| Path | Contents |
+|---|---|
+| `3_course/` | Third-year coursework: C++ labs (algorithms, assembly, containers), SQL labs, networking (sockets, TimeSync), Python bot |
+| `MATH_MODELLING/` | Numerical methods and MotionGL, an OpenGL motion-law visualiser |
+| `GausJordan/` | Gauss-Jordan solver with a small matrix library |
+| `HomeWork_30/` | Qt crypto homework app |
+| `TEMP/` | Qt sandbox project (HelloForm) |
+| `PRACTICE/` | Practice paperwork and the AleksFitnessMax socket chat |
+| `vesper/` | Vesper messenger: Express + Prisma + Socket.IO server, React/Vite web client |
+| `docs/` | Course assignments and reference PDFs |
