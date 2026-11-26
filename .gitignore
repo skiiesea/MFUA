@@ -40,3 +40,13 @@ stack.hh
 *.yy.cc
 *.output
 
+
+# CMake / MSBuild output (regenerated locally, never commit)
+**/build/
+**/CMakeFiles/
+*.slnx
+*.vcxproj.filters
+*.lastbuildstate
+*.tlog
+*.ilk
+

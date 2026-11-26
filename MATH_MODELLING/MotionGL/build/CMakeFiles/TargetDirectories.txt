@@ -1,6 +1,0 @@
-C:/git_demo/MotionGL/build/CMakeFiles/motiongl.dir
-C:/git_demo/MotionGL/build/CMakeFiles/demo_projectile.dir
-C:/git_demo/MotionGL/build/CMakeFiles/demo_linear.dir
-C:/git_demo/MotionGL/build/CMakeFiles/demo_tube.dir
-C:/git_demo/MotionGL/build/CMakeFiles/ALL_BUILD.dir
-C:/git_demo/MotionGL/build/CMakeFiles/ZERO_CHECK.dir
