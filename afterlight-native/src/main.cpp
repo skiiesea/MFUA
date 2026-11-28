@@ -47,12 +47,33 @@ struct Player {
     bool radioLogFound = false;
     bool hasSpareFuse = false;
     bool secondRadioLogFound = false;
+    float dayTime = 0.28f;
+    float weatherClock = 0.0f;
+    bool raining = false;
 };
 
 float DistanceXZ(Vector3 a, Vector3 b) {
     const float dx = a.x - b.x;
     const float dz = a.z - b.z;
     return std::sqrt(dx * dx + dz * dz);
+}
+
+bool CanRestAtCampfire(const Player& player) {
+    const float daylight = std::sin(player.dayTime * 6.2831853f);
+    return player.campfirePlaced &&
+           DistanceXZ(player.position, player.campfirePosition) < 2.6f &&
+           daylight <= 0.25f &&
+           player.hunger >= 18.0f &&
+           player.thirst >= 22.0f;
+}
+
+void RestAtCampfire(Player& player) {
+    player.health = std::min(100.0f, player.health + 28.0f);
+    player.hunger = std::max(0.0f, player.hunger - 18.0f);
+    player.thirst = std::max(0.0f, player.thirst - 22.0f);
+    player.stamina = 100.0f;
+    player.dayTime = 0.28f;
+    player.weatherClock = 0.0f;
 }
 
 void DrawTree(float x, float z, float scale) {
@@ -253,7 +274,7 @@ void SaveGame(const Player& player, const std::array<Pickup, 9>& pickups,
               const char* path = "afterlight_save.txt") {
     std::ofstream file(path, std::ios::trunc);
     if (!file) return;
-    file << "AFTERLIGHT5\n"
+    file << "AFTERLIGHT6\n"
          << player.position.x << ' ' << player.position.y << ' ' << player.position.z << ' '
          << player.yaw << ' ' << player.pitch << ' '
          << player.wood << ' ' << player.stone << ' ' << player.berries << ' ' << player.cookedBerries << ' '
@@ -263,7 +284,9 @@ void SaveGame(const Player& player, const std::array<Pickup, 9>& pickups,
          << player.campfirePosition.z << ' '
          << (player.radioLogFound ? 1 : 0) << ' '
          << (player.hasSpareFuse ? 1 : 0) << ' '
-         << (player.secondRadioLogFound ? 1 : 0) << '\n';
+         << (player.secondRadioLogFound ? 1 : 0) << ' '
+         << player.dayTime << ' ' << player.weatherClock << ' '
+         << (player.raining ? 1 : 0) << '\n';
     for (const auto& pickup : pickups) file << (pickup.active ? 1 : 0) << ' ';
 }
 
@@ -278,13 +301,15 @@ void LoadGame(Player& player, std::array<Pickup, 9>& pickups,
     const bool version3Save = version == "AFTERLIGHT3";
     const bool version4Save = version == "AFTERLIGHT4";
     const bool version5Save = version == "AFTERLIGHT5";
-    if (!legacySave && !version3Save && !version4Save && !version5Save) return;
+    const bool version6Save = version == "AFTERLIGHT6";
+    if (!legacySave && !version3Save && !version4Save && !version5Save && !version6Save) return;
 
     Player loaded;
     int campfire = 0;
     int radioLog = 0;
     int spareFuse = 0;
     int secondRadioLog = 0;
+    int raining = 0;
     if (legacySave) {
         file >> loaded.position.x >> loaded.position.y >> loaded.position.z
              >> loaded.yaw >> loaded.wood >> loaded.stone >> loaded.berries
@@ -299,8 +324,9 @@ void LoadGame(Player& player, std::array<Pickup, 9>& pickups,
              >> campfire >> loaded.campfirePosition.x >> loaded.campfirePosition.y
              >> loaded.campfirePosition.z;
     }
-    if (version4Save || version5Save) file >> radioLog;
-    if (version5Save) file >> spareFuse >> secondRadioLog;
+    if (version4Save || version5Save || version6Save) file >> radioLog;
+    if (version5Save || version6Save) file >> spareFuse >> secondRadioLog;
+    if (version6Save) file >> loaded.dayTime >> loaded.weatherClock >> raining;
     if (!file) return;
 
     const auto finite = [](float value) { return std::isfinite(value); };
@@ -310,6 +336,7 @@ void LoadGame(Player& player, std::array<Pickup, 9>& pickups,
         !finite(loaded.thirst) || !finite(loaded.stamina) ||
         !finite(loaded.campfirePosition.x) || !finite(loaded.campfirePosition.y) ||
         !finite(loaded.campfirePosition.z) ||
+        !finite(loaded.dayTime) || !finite(loaded.weatherClock) ||
         std::abs(loaded.position.x) > WORLD_LIMIT || std::abs(loaded.position.z) > WORLD_LIMIT ||
         loaded.pitch < -1.35f || loaded.pitch > 1.35f ||
         loaded.wood < 0 || loaded.wood > 999 ||
@@ -325,6 +352,9 @@ void LoadGame(Player& player, std::array<Pickup, 9>& pickups,
         (spareFuse != 0 && spareFuse != 1) ||
         (secondRadioLog != 0 && secondRadioLog != 1) ||
         (secondRadioLog != 0 && radioLog == 0) ||
+        (raining != 0 && raining != 1) ||
+        loaded.dayTime < 0.0f || loaded.dayTime >= 1.0f ||
+        loaded.weatherClock < 0.0f || loaded.weatherClock > 85.0f ||
         std::abs(loaded.campfirePosition.x) > WORLD_LIMIT ||
         std::abs(loaded.campfirePosition.z) > WORLD_LIMIT) return;
 
@@ -334,7 +364,7 @@ void LoadGame(Player& player, std::array<Pickup, 9>& pickups,
         if (!(file >> value) || (value != 0 && value != 1)) return;
         activePickups[i] = value != 0;
     }
-    if (version5Save) {
+    if (version5Save || version6Save) {
         int value = 0;
         if (!(file >> value) || (value != 0 && value != 1)) return;
         activePickups[8] = value != 0;
@@ -346,6 +376,7 @@ void LoadGame(Player& player, std::array<Pickup, 9>& pickups,
     loaded.radioLogFound = radioLog != 0;
     loaded.hasSpareFuse = spareFuse != 0;
     loaded.secondRadioLogFound = secondRadioLog != 0;
+    loaded.raining = raining != 0;
     loaded.position.y = 1.8f;
     loaded.verticalVelocity = 0.0f;
     loaded.grounded = true;
@@ -379,6 +410,9 @@ int RunSelfTests() {
     original.radioLogFound = true;
     original.hasSpareFuse = true;
     original.secondRadioLogFound = true;
+    original.dayTime = 0.82f;
+    original.weatherClock = 41.5f;
+    original.raining = true;
     std::array<Pickup, 9> originalPickups{};
     for (auto& pickup : originalPickups) pickup.active = true;
     originalPickups[8].active = false;
@@ -391,7 +425,26 @@ int RunSelfTests() {
           "version 5 story progress survives save/load");
     check(restored.cookedBerries == 4 && restored.wood == 3 && restored.stone == 2,
           "version 5 inventory survives save/load");
-    check(!restoredPickups[8].active, "version 5 saves the fuse pickup state");
+    check(!restoredPickups[8].active, "version 6 saves the fuse pickup state");
+    check(std::abs(restored.dayTime - original.dayTime) < 0.001f &&
+          std::abs(restored.weatherClock - original.weatherClock) < 0.001f &&
+          restored.raining, "version 6 persists world time and weather");
+    std::remove(testPath);
+
+    {
+        std::ofstream legacy(testPath, std::ios::trunc);
+        legacy << "AFTERLIGHT5\n"
+               << "0 1.8 -18 0 -0.1 3 2 1 1 90 80 70 60 1 1 0 2 1 1 0\n"
+               << "1 1 1 1 1 1 1 1 0\n";
+    }
+    Player version5Player;
+    std::array<Pickup, 9> version5Pickups{};
+    LoadGame(version5Player, version5Pickups, testPath);
+    check(version5Player.hasSpareFuse && !version5Player.secondRadioLogFound,
+          "version 5 story progress remains compatible");
+    check(!version5Pickups[8].active, "version 5 ninth pickup state remains compatible");
+    check(std::abs(version5Player.dayTime - 0.28f) < 0.001f && !version5Player.raining,
+          "version 5 saves use default world time and weather");
     std::remove(testPath);
 
     {
@@ -436,6 +489,31 @@ int RunSelfTests() {
           "version 2 saves remain compatible");
     std::remove(testPath);
 
+    Player rested;
+    rested.campfirePlaced = true;
+    rested.campfirePosition = {0.0f, 0.0f, 0.0f};
+    rested.position = {0.0f, 1.8f, 0.0f};
+    rested.dayTime = 0.75f;
+    rested.health = 60.0f;
+    rested.hunger = 80.0f;
+    rested.thirst = 70.0f;
+    rested.stamina = 15.0f;
+    check(CanRestAtCampfire(rested), "campfire rest is available at night");
+    RestAtCampfire(rested);
+    check(std::abs(rested.dayTime - 0.28f) < 0.001f &&
+          rested.stamina == 100.0f, "campfire rest advances time to morning and restores stamina");
+    check(rested.health == 88.0f && rested.hunger == 62.0f && rested.thirst == 48.0f,
+          "campfire rest trades food and water for health recovery");
+
+    rested.dayTime = 0.28f;
+    check(!CanRestAtCampfire(rested), "campfire rest is unavailable during daylight");
+    rested.dayTime = 0.75f;
+    rested.position = {8.0f, 1.8f, 0.0f};
+    check(!CanRestAtCampfire(rested), "campfire rest requires proximity");
+    rested.position = {0.0f, 1.8f, 0.0f};
+    rested.hunger = 10.0f;
+    check(!CanRestAtCampfire(rested), "campfire rest requires enough food and water");
+
     return passed ? 0 : 1;
 }
 
@@ -476,9 +554,6 @@ int main(int argc, char** argv) {
 
     bool showHelp = true;
     bool showInventory = false;
-    float dayTime = 0.28f;
-    float weatherClock = 0.0f;
-    bool raining = false;
     std::array<Vector3, 96> rainDrops{};
     for (std::size_t i = 0; i < rainDrops.size(); ++i) {
         rainDrops[i] = {
@@ -492,14 +567,14 @@ int main(int argc, char** argv) {
 
     while (!WindowShouldClose()) {
         const float dt = std::min(GetFrameTime(), 0.05f);
-        dayTime += dt * 0.0018f;
-        if (dayTime >= 1.0f) dayTime -= 1.0f;
-        weatherClock += dt;
-        if (weatherClock >= 85.0f) {
-            weatherClock = 0.0f;
-            raining = !raining;
+        player.dayTime += dt * 0.0018f;
+        if (player.dayTime >= 1.0f) player.dayTime -= 1.0f;
+        player.weatherClock += dt;
+        if (player.weatherClock >= 85.0f) {
+            player.weatherClock = 0.0f;
+            player.raining = !player.raining;
         }
-        if (raining) {
+        if (player.raining) {
             for (auto& drop : rainDrops) {
                 drop.y -= 19.0f * dt;
                 drop.x += 1.1f * dt;
@@ -554,7 +629,7 @@ int main(int argc, char** argv) {
         if (!IsKeyDown(KEY_LEFT_SHIFT) || movementLength < 0.001f)
             player.stamina = std::min(100.0f, player.stamina + 19.0f * dt);
         player.hunger = std::max(0.0f, player.hunger - 0.035f * dt);
-        player.thirst = std::max(0.0f, player.thirst - (raining ? 0.045f : 0.065f) * dt);
+        player.thirst = std::max(0.0f, player.thirst - (player.raining ? 0.045f : 0.065f) * dt);
         if (player.hunger <= 0.0f || player.thirst <= 0.0f)
             player.health = std::max(0.0f, player.health - 2.0f * dt);
         if (player.campfirePlaced && DistanceXZ(player.position, player.campfirePosition) < 4.0f)
@@ -652,6 +727,22 @@ int main(int argc, char** argv) {
                 messageTimer = 4.5f;
             }
         }
+        if (IsKeyPressed(KEY_R)) {
+            if (CanRestAtCampfire(player)) {
+                RestAtCampfire(player);
+                statusMessage = "You rest until dawn";
+                SaveGame(player, pickups);
+            } else if (!player.campfirePlaced ||
+                       DistanceXZ(player.position, player.campfirePosition) >= 2.6f) {
+                statusMessage = "Find your campfire before resting";
+            } else if (std::sin(player.dayTime * 6.2831853f) > 0.25f) {
+                statusMessage = "You can only rest after dark";
+            } else {
+                statusMessage = "Eat and drink before resting";
+            }
+            messageTimer = 2.8f;
+        }
+
         if (IsKeyPressed(KEY_C)) {
             if (!player.campfirePlaced && player.wood >= 3 && player.stone >= 2) {
                 player.wood -= 3;
@@ -680,9 +771,9 @@ int main(int argc, char** argv) {
         if (IsKeyPressed(KEY_F9)) {
             player = Player{};
             for (auto& pickup : pickups) pickup.active = true;
-            dayTime = 0.28f;
-            raining = false;
-            weatherClock = 0.0f;
+            player.dayTime = 0.28f;
+            player.raining = false;
+            player.weatherClock = 0.0f;
             SaveGame(player, pickups);
             statusMessage = "New run started";
             messageTimer = 2.0f;
@@ -708,7 +799,7 @@ int main(int argc, char** argv) {
         camera.fovy = 75.0f;
         camera.projection = CAMERA_PERSPECTIVE;
 
-        const float daylight = std::max(0.0f, std::sinf(dayTime * 6.2831853f));
+        const float daylight = std::max(0.0f, std::sinf(player.dayTime * 6.2831853f));
         const unsigned char skyR = static_cast<unsigned char>(38.0f + daylight * 83.0f);
         const unsigned char skyG = static_cast<unsigned char>(47.0f + daylight * 85.0f);
         const unsigned char skyB = static_cast<unsigned char>(62.0f + daylight * 76.0f);
@@ -718,7 +809,7 @@ int main(int argc, char** argv) {
         DrawRectangleGradientV(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, skyTop, skyHorizon);
         BeginMode3D(camera);
         DrawWorld(concreteTexture, terrainMesh, terrainMaterial, roadMesh, roadMaterial);
-        const float sunAngle = dayTime * 6.2831853f;
+        const float sunAngle = player.dayTime * 6.2831853f;
         const Vector3 sunPosition{std::cosf(sunAngle) * 48.0f,
                                   std::max(-4.0f, std::sinf(sunAngle) * 38.0f),
                                   player.position.z + 42.0f};
@@ -742,7 +833,7 @@ int main(int argc, char** argv) {
         }
 
         for (const auto& drop : rainDrops) {
-            if (raining) {
+            if (player.raining) {
                 const Vector3 a{drop.x, drop.y, drop.z};
                 const Vector3 b{drop.x - 0.08f, drop.y - 0.9f, drop.z + 0.04f};
                 DrawLine3D(a, b, Color{151, 174, 183, 150});
@@ -791,7 +882,7 @@ int main(int argc, char** argv) {
         drawBar(32, 98, "FOOD", player.hunger, Color{190, 151, 83, 255});
         drawBar(32, 113, "WATER", player.thirst, Color{83, 147, 173, 255});
         DrawText(TextFormat("STAMINA %i%%", static_cast<int>(player.stamina)), 208, 84, 12, RAYWHITE);
-        DrawText(raining ? "RAIN" : "DRY", 208, 101, 12, Color{183, 197, 193, 255});
+        DrawText(player.raining ? "RAIN" : "DRY", 208, 101, 12, Color{183, 197, 193, 255});
         DrawText(daylight > 0.25f ? "DAY" : "NIGHT", 208, 116, 12, Color{225, 214, 180, 255});
 
         DrawLine(SCREEN_WIDTH / 2 - 8, SCREEN_HEIGHT / 2, SCREEN_WIDTH / 2 + 8,
@@ -820,12 +911,12 @@ int main(int argc, char** argv) {
             const bool nearFuse = nearestPickup >= 0 &&
                 pickups[static_cast<std::size_t>(nearestPickup)].type == 3;
             const char* prompt = nearRadio ? "F  -  USE RADIO RECEIVER" :
-                (nearCampfirePrompt ? "E  -  COOK WILD BERRIES" :
+                (nearCampfirePrompt ? "E  COOK BERRIES  |  R  REST" :
                  (nearFuse ? "E  -  TAKE SPARE FUSE" : "E  -  PICK UP RESOURCE"));
-            DrawRectangle(SCREEN_WIDTH / 2 - 128, SCREEN_HEIGHT / 2 + 28, 256, 34,
+            DrawRectangle(SCREEN_WIDTH / 2 - 170, SCREEN_HEIGHT / 2 + 28, 340, 34,
                           Fade(Color{12, 18, 18, 255}, 0.82f));
-            DrawText(prompt, SCREEN_WIDTH / 2 - MeasureText(prompt, 16) / 2,
-                     SCREEN_HEIGHT / 2 + 37, 16, RAYWHITE);
+            DrawText(prompt, SCREEN_WIDTH / 2 - MeasureText(prompt, 14) / 2,
+                     SCREEN_HEIGHT / 2 + 37, 14, RAYWHITE);
         }
 
         const Vector3 stationDirection{player.position.x, 0.0f, 31.0f - player.position.z};
@@ -849,12 +940,13 @@ int main(int argc, char** argv) {
                      SCREEN_WIDTH - 250, 49, 14, Color{174, 199, 177, 255});
 
         if (showHelp) {
-            DrawRectangle(18, SCREEN_HEIGHT - 160, 390, 142, Fade(Color{14, 20, 20, 255}, 0.78f));
-            DrawText("WASD Move   SHIFT Sprint   SPACE Jump", 32, SCREEN_HEIGHT - 146, 15, RAYWHITE);
-            DrawText("E Collect / cook berries at campfire", 32, SCREEN_HEIGHT - 120, 14, RAYWHITE);
-            DrawText("F Water / radio   I Inventory   1 / 2 Eat", 32, SCREEN_HEIGHT - 94, 13, RAYWHITE);
-            DrawText("C Campfire   F5 Save   F9 New   H Help", 32, SCREEN_HEIGHT - 68, 13, RAYWHITE);
-            DrawText("ESC Release mouse", 32, SCREEN_HEIGHT - 42, 12, Color{185, 195, 190, 255});
+            DrawRectangle(18, SCREEN_HEIGHT - 178, 440, 160, Fade(Color{14, 20, 20, 255}, 0.78f));
+            DrawText("WASD Move   SHIFT Sprint   SPACE Jump", 32, SCREEN_HEIGHT - 162, 15, RAYWHITE);
+            DrawText("E Collect / cook berries at campfire", 32, SCREEN_HEIGHT - 137, 14, RAYWHITE);
+            DrawText("R Rest until dawn at campfire (night only)", 32, SCREEN_HEIGHT - 112, 13, RAYWHITE);
+            DrawText("F Water / radio   I Inventory   1 / 2 Eat", 32, SCREEN_HEIGHT - 87, 13, RAYWHITE);
+            DrawText("C Campfire   F5 Save   F9 New   H Help", 32, SCREEN_HEIGHT - 62, 13, RAYWHITE);
+            DrawText("ESC Release mouse", 32, SCREEN_HEIGHT - 37, 12, Color{185, 195, 190, 255});
         }
 
         if (messageTimer > 0.0f) {
