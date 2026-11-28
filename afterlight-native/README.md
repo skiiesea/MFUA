@@ -11,9 +11,10 @@ This is the only actively developed AFTERLIGHT game: a native C++17 / raylib Win
 - Survival needs: health, hunger, thirst and sprint stamina.
 - Resource gathering, raw berry consumption, pond water interaction and campfire crafting.
 - Campfire cooking loop: use E near a placed campfire to cook gathered berries; press 2 to eat cooked food for a larger hunger recovery and a small health recovery.
+- Campfire rest: press R near your campfire after dark to skip to morning, restore up to 28 health and refill stamina. Resting costs 18 hunger and 22 thirst, so prepare food and water first.
 - Dynamic day/night cycle and periodic rain.
-- Versioned local save/load: F5 saves; F9 starts a fresh run. Version 5 stores cooked food, camera pitch, both story logs, spare-fuse state and all nine resource locations. It validates loaded values and remains compatible with version 2, 3 and 4 saves.
-- Headless `--self-test` checks version 5 round-tripping, version 2/3/4 compatibility and the newly added pickup state without opening a game window.
+- Versioned local save/load: F5 saves; F9 starts a fresh run. Version 6 stores cooked food, camera pitch, both story logs, spare-fuse state, all nine resource locations, world time and rain state. It validates loaded values and remains compatible with version 2, 3, 4 and 5 saves.
+- Headless `--self-test` checks version 6 round-tripping, version 2/3/4/5 compatibility, rest rules and the saved pickup/world state without opening a game window.
 - Station 04 radio receiver: enter the station and press F near the desk to discover Signal Log 01. A second objective leads to a remote auxiliary cache; collect its spare 10A fuse, return to the receiver and restore the weather relay to discover Signal Log 02.
 - Objective tracker points to Station 04, the auxiliary cache, and back to the receiver. The spare fuse is shown in the field inventory and consumed when the relay is restored.
 - Target profile: 1280×720, 30 FPS cap, low-cost primitive geometry.
@@ -45,6 +46,7 @@ The GitHub Actions workflow `.github/workflows/afterlight-native-windows.yml` bu
 | Left Shift | Sprint |
 | Space | Jump |
 | E | Collect nearby resource / cook berries at campfire |
+| R | Rest at campfire until morning (after dark) |
 | F | Drink at pond / listen to the receiver inside Station 04 |
 | I | Toggle inventory |
 | 1 | Eat raw berries |
